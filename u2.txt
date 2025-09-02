@@ -1,0 +1,25 @@
+U2:
+
+Sequel language to unibl (universal bootstrappable language) with focus on a larger more pragmatic virtual machine. A lot of the problems that arose during development of unibl were related to 2 key issues which multiplied eachother:
+
+- The unibl virtual machine had to be kept very minimal meaning basic computation took many cycles
+- Unibl bytecode could not be executed efficiently or translated to raw assembly as directly as one would hope
+
+These 2 key issues lead to the ultimate failure of the language upon discovery that dividing 2 64bit integers while being entirely computationally possible would take ~1ms of compute time, completely unacceptable. The only out for this problem was to either add more instructions (against the fundemental design principle) or redesign the entire virtual machine.
+
+With the U2 Language I aim to make a virtual machine that is slightly more complex but at the tradeoff of being more efficient, more portable to different systems ultimately, while still being simple enough to implement in at most 3 afternoons of solid work.
+
+Additionally I want to design augmentable virtual machine that has an implementation floor (all u2 programs can compile to an absolutely minimal set of instructions) but that also can incorporate increasingly complex instructions for performance boosts. That way the programming language is very easily implementable and there is a linear tradeoff between implementation time and operational efficiency. The thought process behind this on compiler side is to make non-essential VM instructions into macros of other instructions, creating a dependancy tree. Upon compilation this tree can be resolved and the code can compile as efficiently as possible for the implemented instruction set.
+
+
+Process:
+
+The idea behind how I want to implement this is very bottom up. In the construction of unibl I focused first on the development of the virtual machine as an interpreter instead of as a compiler to raw bytecode. For U2 the primary focus of the U2VM should be generating code that
+a. Compiles directly and intuitively to raw machine code
+b. Compiles efficiently with greater focus on pragmatism than raw portability
+
+To facilitate this the U2 language compilation process should be:
+
+U2 Code --(U2 Compiler)-> U2 Assembly --(U2 Assembler)-> U2 Bytecode --(U2 Virtual Machine)-> x86-64 asm
+
+with development focusing on building components right to left
