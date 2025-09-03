@@ -8,7 +8,7 @@ enum {
 	FORMAT_J, // immediate opcode
 	FORMAT_D, // register opcode
 	FORMAT_NONE, // opcode
-} typedef InstructionFormat
+} typedef InstructionFormat;
 
 struct {
 	InstructionFormat format; 
@@ -16,6 +16,8 @@ struct {
 } typedef Instruction;
 
 Instruction Instructions[] = {
-	{ FORMAT_R, "MOV" },
-	{ FORMAT_D, "DREF" },
-}
+	{ FORMAT_R, "mov" },
+	{ FORMAT_D, "dref" },
+};
+
+int Instruction_Count = sizeof(Instructions)/sizeof(Instructions[0]);

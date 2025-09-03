@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "../common/instruction.h"
+#define OPCODE_BITS 6
+#define REG_BITS 4
+#define IMM_BITS 14
+
 /**
 	U2 VIRTUAL MACHINE
 
@@ -6,12 +13,6 @@
 
 	Usage = u2vm bytecode.u2b
 */
-
-#include <stdio.h>
-#include <stdlib.h>
-#define OPCODE_BITS 6
-#define REG_BITS 4
-#define IMM_BITS 14
 
 int nextInstruction(FILE* f, unsigned int* inst) {
 	size_t n = fread(inst, sizeof(unsigned int), 1, f);
