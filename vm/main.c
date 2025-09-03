@@ -9,6 +9,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#define OPCODE_BITS 6
+#define REG_BITS 4
+#define IMM_BITS 14
 
 int nextInstruction(FILE* f, unsigned int* inst) {
 	size_t n = fread(inst, sizeof(unsigned int), 1, f);
@@ -21,6 +24,32 @@ int nextInstruction(FILE* f, unsigned int* inst) {
 		}
 	}
 	return 1;
+}
+
+unsigned int getOpcode(unsigned int inst) {
+	return inst >> (32 - OPCODE_BITS);
+}
+
+unsigned int getRd(unsigned int inst) {
+	return (inst >> (32 - OPCODE_BITS - REG_BITS)) & ((1u << REG_BITS) - 1);
+}
+
+unsigned int getRs1(unsigned int inst) {
+	return (inst >> (32 - OPCODE_BITS - 2*REG_BITS)) & ((1u << REG_BITS) - 1);
+}
+
+unsigned int getRs2(unsigned int inst) {
+	return (inst >> (32 - OPCODE_BITS - 3*REG_BITS)) & ((1u << REG_BITS) - 1);
+}
+
+unsigned int getImm(unsigned int inst) {
+	unsigned int mask = (1u << IMM_BITS) - 1;
+	int imm = inst & mask;
+	// sign extend
+	if (imm & (1u << (IMM_BITS - 1))) {
+		imm |= ~mask;
+	}
+	return imm;
 }
 
 int main(int argc, char** argv) {
@@ -41,6 +70,18 @@ int main(int argc, char** argv) {
 	unsigned int instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
 		printf("Read instruction %d (0x%08X)\n", instruction, instruction);
+
+		unsigned int opcode = getOpcode(instruction);
+		unsigned int rd = getRd(instruction);
+		unsigned int rs1 = getRs1(instruction);
+		unsigned int rs2 = getRs2(instruction);
+		unsigned int immediate = getImm(instruction);
+
+		printf("Opcode %X\n", opcode);
+		printf("Rd %X\n", rd);
+		printf("Rs1 %X\n", rs1);
+		printf("Rs2 %X\n", rs2);
+		printf("Immediate %X\n", immediate);
 	}
 
 	fclose(bytecodeFile);
