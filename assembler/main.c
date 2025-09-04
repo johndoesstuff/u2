@@ -15,33 +15,30 @@ int countDelim(char* str, char delim) {
 	return count;
 }
 
+void setBitRange(int *instruction, int value, int start, int length) {
+	int mask = ((1 << length) - 1) << start;
+	*instruction &= ~mask;
+	*instruction |= (value & ((1 << length) - 1)) << start;
+}
+
 void setOp(int* instruction, int opcode) {
-	*instruction &= ~((1 << 6) - 1);
-	*instruction |= opcode << 26;
+	setBitRange(instruction, opcode, 26, 6);
 }
 
 void setRd(int* instruction, int rd) {
-	rd &= (1 << 4) - 1;
-	*instruction &= ~((1 << 4) - 1);
-	*instruction |= rd << 22;
+	setBitRange(instruction, rd, 22, 4);
 }
 
 void setRs1(int* instruction, int rs1) {
-	rs1 &= (1 << 4) - 1;
-	*instruction &= ~((1 << 4) - 1);
-	*instruction |= rs1 << 18;
+	setBitRange(instruction, rs1, 18, 4);
 }
 
 void setRs2(int* instruction, int rs2) {
-	rs2 &= (1 << 4) - 1;
-	*instruction &= ~((1 << 4) - 1);
-	*instruction |= rs2 << 18;
+	setBitRange(instruction, rs2, 14, 4);
 }
 
 void setImm(int* instruction, int imm) {
-	imm &= (1 << 14) - 1;
-	*instruction &= ~((1 << 14) - 1);
-	*instruction |= imm;
+	setBitRange(instruction, imm, 0, 14);
 }
 
 int main(int argc, char** argv) {
@@ -68,12 +65,15 @@ int main(int argc, char** argv) {
 		line[read - 1] = '\0';
 
 		// get op components
-		char** opargs = malloc(sizeof(char*) * countDelim(line, ' '));
+		char** opargs = malloc(sizeof(char*) * (countDelim(line, ' ') + 1));
 		int opargsc = 0;
 		for (char* pch = strtok(line, " "); pch != NULL; pch = strtok(NULL, " ")) {
 			opargs[opargsc++] = pch;
 			printf("Found arg: %s\n", pch);
 		}
+
+		// if line is empty ignore
+		if (opargsc == 0) continue;
 
 		// search for op
 		int opcode = -1;
@@ -107,6 +107,9 @@ int main(int argc, char** argv) {
 				if (opargsc != 2) error_argnum(opargsc, 2, instruction.name, linec);
 				break;
 			case FORMAT_D:
+				if (opargsc != 2) error_argnum(opargsc, 2, instruction.name, linec);
+				break;
+			case FORMAT_NONE:
 				if (opargsc != 1) error_argnum(opargsc, 1, instruction.name, linec);
 				break;
 		}

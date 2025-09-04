@@ -1,3 +1,3 @@
 target:
-	gcc vm/main.c -o vm/vm
-	gcc assembler/main.c -o assembler/assembler
+	gcc vm/main.c -o vm/vm -g
+	gcc assembler/main.c -o assembler/assembler -g
