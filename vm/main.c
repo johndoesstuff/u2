@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../common/instruction.h"
-#define OPCODE_BITS 6
-#define REG_BITS 4
-#define IMM_BITS 14
+#include "../common/config.h"
 
 /**
 	U2 VIRTUAL MACHINE
