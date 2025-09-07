@@ -41,6 +41,15 @@ void setImm(int* instruction, int imm) {
 	setBitRange(instruction, imm, 0, 14);
 }
 
+void emitByte(unsigned char byte, FILE* fptr) {
+	//printf("Emit %X\n", byte);
+	fwrite(&byte, sizeof(unsigned char), 1, fptr);
+}
+
+void emitInst(unsigned int inst, FILE* fptr) {
+	fwrite(&inst, sizeof(unsigned int), 1, fptr);
+}
+
 int toRegister(char* reg) {
 	if (reg == NULL) {
 		printf("Internal Error: Invalid Register\n");
@@ -73,6 +82,13 @@ int main(int argc, char** argv) {
 	FILE* asmFile = fopen(asmPath, "r");
 	if (asmFile == NULL) {
 		printf("Could not find file of path %s\n", asmPath);
+		exit(1);
+	}
+
+	char* bcPath = argv[2];
+	FILE* bcFile = fopen(bcPath, "wb");
+	if (bcFile == NULL) {
+		printf("Could not open file of path %s\n", bcPath);
 		exit(1);
 	}
 
@@ -166,6 +182,8 @@ int main(int argc, char** argv) {
 				exit(1);
 		}
 
+		// generate bytecode
+		
 		unsigned int instBC = 0;
 		setOp(&instBC, opcode);
 		if (rd != -1) setRd(&instBC, rd);
@@ -173,6 +191,8 @@ int main(int argc, char** argv) {
 		if (rs2 != -1) setRs2(&instBC, rs2);
 		if (imm != -1) setImm(&instBC, imm);
 		printf("Instruction: %X\n", instBC);
+
+		emitInst(instBC, bcFile);
 
 		// cleanup
 		free(opargs);
