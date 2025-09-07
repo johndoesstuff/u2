@@ -41,6 +41,19 @@ void setImm(int* instruction, int imm) {
 	setBitRange(instruction, imm, 0, 14);
 }
 
+int toRegister(char* reg) {
+	if (reg == NULL) {
+		printf("Internal Error: Invalid Register\n");
+		exit(1);
+	}
+	if (tolower(*reg) != 'r') {
+		printf("Invalid Register, expected [r1-r16]");
+		exit(1);
+	}
+	reg++;
+	return atoi(reg);
+}
+
 int main(int argc, char** argv) {
 	// correct usage check
 	if (argc < 3) {
@@ -112,6 +125,38 @@ int main(int argc, char** argv) {
 			case FORMAT_NONE:
 				if (opargsc != 1) error_argnum(opargsc, 1, instruction.name, linec);
 				break;
+		}
+
+		int rd  = -1;
+		int rs1 = -1;
+		int rs2 = -1;
+		int imm = -1;
+
+		switch (instruction.format) {
+			case FORMAT_F:
+				rd = toRegister(opargs[1]);
+				rs1 = toRegister(opargs[2]);
+				rs2 = toRegister(opargs[3]);
+				break;
+			case FORMAT_R:
+				rd = toRegister(opargs[1]);
+				rs1 = toRegister(opargs[2]);
+				break;
+			case FORMAT_I:
+				rd = toRegister(opargs[1]);
+				imm = atoi(opargs[2]);
+				break;
+			case FORMAT_J:
+				imm = atoi(opargs[1]);
+				break;
+			case FORMAT_D:
+				rd = toRegister(opargs[1]);
+				break;
+			case FORMAT_NONE:
+				break;
+			default:
+				printf("Internal Error: Unknown Instruction format\n");
+				exit(1);
 		}
 
 		unsigned int instBC = 0;
