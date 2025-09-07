@@ -47,10 +47,17 @@ int toRegister(char* reg) {
 		exit(1);
 	}
 	if (tolower(*reg) != 'r') {
-		printf("Invalid Register, expected [r1-r16]");
+		printf("Invalid Register, expected [r1-r16]\n");
 		exit(1);
 	}
 	reg++;
+	int ret = atoi(reg);
+	
+	// atoi fail or invalid reg range
+	if (ret > 16 || ret <= 0) {
+		printf("Invalid Register, expected [r1-r16]\n");
+		exit(1);
+	}
 	return atoi(reg);
 }
 
@@ -161,6 +168,10 @@ int main(int argc, char** argv) {
 
 		unsigned int instBC = 0;
 		setOp(&instBC, opcode);
+		if (rd != -1) setRd(&instBC, rd);
+		if (rs1 != -1) setRs1(&instBC, rs1);
+		if (rs2 != -1) setRs2(&instBC, rs2);
+		if (imm != -1) setImm(&instBC, imm);
 		printf("Instruction: %X\n", instBC);
 
 		// cleanup

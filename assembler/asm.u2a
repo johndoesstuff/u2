@@ -1,4 +1,2 @@
-mov r0 r1
-   
-dref r2
-
+mov r1 r2
+dref r3
