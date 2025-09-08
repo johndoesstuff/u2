@@ -70,6 +70,14 @@ int toRegister(char* reg) {
 	return atoi(reg);
 }
 
+int getFirstChar(char* str, char ch) {
+	// return -1 if not found
+	for (int i = 0; i < strlen(str); i++) {
+		if (str[i] == ch) return i;
+	}
+	return -1;
+}
+
 int main(int argc, char** argv) {
 	// correct usage check
 	if (argc < 3) {
@@ -99,6 +107,12 @@ int main(int argc, char** argv) {
 	while ((read = getline(&line, &len, asmFile)) != -1) {
 		// remove \n from line
 		line[read - 1] = '\0';
+
+		// ignore past ;
+		int comment = getFirstChar(line, ';');
+		if (comment != -1) {
+			line[comment] = '\0';
+		}
 
 		// get op components
 		char** opargs = malloc(sizeof(char*) * (countDelim(line, ' ') + 1));
