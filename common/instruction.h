@@ -20,8 +20,8 @@ Instruction Instructions[] = {
 	// DATA
 	{ FORMAT_R, "mov" },    // copy rs1 to rd
 	{ FORMAT_I, "li" },     // load immediate to rd
-	{ FORMAT_R, "ld" },     // load memory to rd
-	{ FORMAT_R, "st" },     // store to memory from rd
+	{ FORMAT_I, "ld" },     // load memory to rd
+	{ FORMAT_I, "st" },     // store to memory from rd
 
 	// ARITHMETIC
 	{ FORMAT_F, "add" },    // add rs1 and rs2 and store in rd

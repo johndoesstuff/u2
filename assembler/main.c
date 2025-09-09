@@ -7,6 +7,15 @@
 
 #include "error.c"
 
+/**
+	U2 ASSEMBLER
+
+	This is the main file for the u2 assembler
+	u2 assembly (*.u2a) -> u2 bytecode (*.u2b)
+
+	Usage = u2asm asm.u2a bytecode.u2b
+ */
+
 int countDelim(char* str, char delim) {
 	int count = 0;
 	for (char* clone = str; *clone != '\0'; clone++) {

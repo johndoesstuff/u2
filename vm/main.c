@@ -76,11 +76,37 @@ int main(int argc, char** argv) {
 		unsigned int rs2 = getRs2(instruction);
 		unsigned int immediate = getImm(instruction);
 
-		printf("Opcode %X\n", opcode);
+		/*printf("Opcode %X\n", opcode);
 		printf("Rd %X\n", rd);
 		printf("Rs1 %X\n", rs1);
 		printf("Rs2 %X\n", rs2);
-		printf("Immediate %X\n", immediate);
+		printf("Immediate %X\n", immediate); */
+		Instruction instructionObj = Instructions[opcode];
+
+		printf("%s", instructionObj.name);
+		switch (instructionObj.format) {
+			case FORMAT_F:
+				printf(" r%d r%d r%d", rd, rs1, rs2);
+				break;
+			case FORMAT_R:
+				printf(" r%d r%d", rd, rs1);
+				break;
+			case FORMAT_I:
+				printf(" r%d %d", rd, immediate);
+				break;
+			case FORMAT_J:
+				printf(" %d", immediate);
+				break;
+			case FORMAT_D:
+				printf(" r%d", rd);
+				break;
+			case FORMAT_NONE:
+				break;
+			default:
+				printf(" [unknown]");
+				break;
+		}
+		printf("\n");
 	}
 
 	fclose(bytecodeFile);
