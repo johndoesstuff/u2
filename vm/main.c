@@ -104,6 +104,7 @@ int main(int argc, char** argv) {
 				break;
 			default:
 				printf(" [unknown]");
+				exit(1);
 				break;
 		}
 		printf("\n");
