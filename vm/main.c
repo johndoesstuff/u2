@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 			MAP_PRIVATE | MAP_ANONYMOUS,
 			-1,               // fd
 			0);               // offset
-	if (jit_memory = MAP_FAILED) {
+	if (jit_memory == MAP_FAILED) {
 		printf("Could not allocate memory for jit compilation!\n");
 		exit(1);
 	}
