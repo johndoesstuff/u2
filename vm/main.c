@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 #include "../common/instruction.h"
 #include "../common/config.h"
+
+#include "x86jit.h"
 
 /**
 	U2 VIRTUAL MACHINE
@@ -66,6 +69,18 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
+	// prepare memory for jit execution
+	char *jit_memory = mmap(NULL,     // address
+			4096,             // size
+			PROT_READ | PROT_WRITE | PROT_EXEC,
+			MAP_PRIVATE | MAP_ANONYMOUS,
+			-1,               // fd
+			0);               // offset
+	if (jit_memory = MAP_FAILED) {
+		printf("Could not allocate memory for jit compilation!\n");
+		exit(1);
+	}
+
 	unsigned int instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
 		printf("Read instruction %d (0x%08X)\n", instruction, instruction);
@@ -76,13 +91,9 @@ int main(int argc, char** argv) {
 		unsigned int rs2 = getRs2(instruction);
 		unsigned int immediate = getImm(instruction);
 
-		/*printf("Opcode %X\n", opcode);
-		printf("Rd %X\n", rd);
-		printf("Rs1 %X\n", rs1);
-		printf("Rs2 %X\n", rs2);
-		printf("Immediate %X\n", immediate); */
 		Instruction instructionObj = Instructions[opcode];
 
+		// print decoded instruction
 		printf("%s", instructionObj.name);
 		switch (instructionObj.format) {
 			case FORMAT_F:
@@ -108,6 +119,8 @@ int main(int argc, char** argv) {
 				break;
 		}
 		printf("\n");
+
+		emit_jit(&jit_memory, opcode, rd, rs1, rs2, immediate);
 	}
 
 	fclose(bytecodeFile);
