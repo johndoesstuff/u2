@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
 	}
 
 	// return from jit
-	emit_x86ret(&jit_memory);
+	emit_x86ret_reg(&jit_memory, 3);
 
 	// dump machine code because god knows im not getting this right my first try
 	// or my second or third or fourth
@@ -138,7 +138,9 @@ int main(int argc, char** argv) {
 
 	// try to execute jit memory
 	int (*func)() = (int (*)())jit_base;
-	func();
+	int result = func();
+
+	printf("%X\n", result);
 
 	fclose(bytecodeFile);
 	return 0;

@@ -2,24 +2,6 @@
   
 	Welcome to hell
 
-	TODO: Register mapping
-	r1    ->   rax
-	r2    ->   rbx
-	r3    ->   rcx
-	r4    ->   rdx
-	r5    ->   rdi
-	r6    ->   rsi
-	r7    ->   r8
-	r8    ->   r9
-	r9    ->   r10
-	r10   ->   r11
-	r11   ->   r12
-	r12   ->   r13
-	r13   ->   r14
-	r14   ->   r15
-	r15   ->   spill
-	r16   ->   spill
-
  */
 
 #include "x86jit.h"
@@ -63,6 +45,17 @@ void emit_rex(char **buf, int w, int reg, int rm) {
 	if (rex != REX_BASE) emit_byte(buf, rex);
 }
 
+// just for debugging purposes
+void emit_x86ret_reg(char **jit_memory, int reg) {
+	int src = VMRegMap[reg];
+
+	emit_rex(jit_memory, 1, src, X86_RAX);
+	emit_byte(jit_memory, OPCODE_MOV_REG_REG);  // MOV r/m64, r64
+	emit_byte(jit_memory, MODRM(0b11, src, X86_RAX));
+
+	emit_byte(jit_memory, OPCODE_RET); // RET
+}
+
 void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 	int dst = VMRegMap[rd];
 	int src = VMRegMap[rs1];
@@ -94,6 +87,38 @@ void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
 	}
 }
 
+void emit_add(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+	int dst = VMRegMap[rd];	
+	int rhs = VMRegMap[rs1];	
+	int lhs = VMRegMap[rs2];	
+
+	if (dst != X86_SPILL && rhs != X86_SPILL && lhs != X86_SPILL) {
+		if (dst == lhs) {
+			// emit rhs to dst
+			emit_rex(jit_memory, 1, rhs, dst);
+			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
+			emit_byte(jit_memory, MODRM(0b11, rhs, dst));
+		} else if (dst == rhs) {
+			// emit lhs to dst
+			emit_rex(jit_memory, 1, lhs, dst);
+			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
+			emit_byte(jit_memory, MODRM(0b11, lhs, dst));
+		} else {
+			// rd is unique, mov lhs into rd then add rhs
+			emit_rex(jit_memory, 1, lhs, dst);
+			emit_byte(jit_memory, OPCODE_MOV_REG_REG);
+			emit_byte(jit_memory, MODRM(0b11, lhs, dst));
+
+			emit_rex(jit_memory, 1, rhs, dst);
+			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
+			emit_byte(jit_memory, MODRM(0b11, rhs, dst));
+		}
+	} else {
+		printf("TODO: modularize ts\n");
+		exit(1);
+	}
+}
+
 void emit_jit(char** jit_memory,
 		unsigned int opcode,
 		unsigned int rd,
@@ -101,11 +126,15 @@ void emit_jit(char** jit_memory,
 		unsigned int rs2,
 		unsigned int imm) {
 	switch (opcode) {
+		// TODO: modularly enum opcodes based on common instruction.h
 		case 0:
 			emit_mov(jit_memory, rd, rs1);
 			break;
 		case 1:
 			emit_li(jit_memory, rd, imm);
+			break;
+		case 4:
+			emit_add(jit_memory, rd, rs1, rs2);
 			break;
 	}
 
