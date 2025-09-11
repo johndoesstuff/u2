@@ -39,5 +39,6 @@ enum X86Reg {
 };
 
 void emit_jit(char** jit_memory, unsigned int opcode, unsigned int rd, unsigned int rs1, unsigned int rs2, unsigned int imm);
+void emit_x86ret(char** jit_memory);
 
 #endif

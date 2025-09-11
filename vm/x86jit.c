@@ -47,8 +47,12 @@ int VMRegMap[16] = {
 
 uint64_t VMRegSpill[16] = {0};
 
-void emit_byte(char** jit_memory, unsigned char byte) {
+static inline void emit_byte(char** jit_memory, uint8_t byte) {
 	*(*jit_memory)++ = byte;
+}
+
+void emit_x86ret(char** jit_memory) {
+	emit_byte(jit_memory, OPCODE_RET);
 }
 
 void emit_rex(char **buf, int w, int reg, int rm) {
@@ -77,11 +81,13 @@ void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 }
 
 void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
-	// TODO: implement li
 	int dst = VMRegMap[rd];
 	
 	if (dst != X86_SPILL) {
-		// emit mov imm
+		emit_rex(jit_memory, 1, 0, dst);
+		emit_byte(jit_memory, OPCODE_MOV_REG_IMM + (dst & 7));
+
+		for (int i = 0; i < 8; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
 	} else {
 		printf("TODO: implement this aswell\n");
 		exit(1);
@@ -102,4 +108,5 @@ void emit_jit(char** jit_memory,
 			emit_li(jit_memory, rd, imm);
 			break;
 	}
+
 }

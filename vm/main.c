@@ -80,6 +80,7 @@ int main(int argc, char** argv) {
 		printf("Could not allocate memory for jit compilation!\n");
 		exit(1);
 	}
+	char *jit_base = jit_memory;
 
 	unsigned int instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
@@ -122,6 +123,22 @@ int main(int argc, char** argv) {
 
 		emit_jit(&jit_memory, opcode, rd, rs1, rs2, immediate);
 	}
+
+	// return from jit
+	emit_x86ret(&jit_memory);
+
+	// dump machine code because god knows im not getting this right my first try
+	// or my second or third or fourth
+	size_t emitted_size = jit_memory - jit_base;
+	printf("===== x86 dump =====\n");
+	for (int i = 0; i < emitted_size; i++) {
+		printf("%02X ", (unsigned char)jit_base[i]);
+	}
+	printf("\n\n");
+
+	// try to execute jit memory
+	int (*func)() = (int (*)())jit_base;
+	func();
 
 	fclose(bytecodeFile);
 	return 0;
