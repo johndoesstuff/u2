@@ -33,10 +33,6 @@ static inline void emit_byte(char** jit_memory, uint8_t byte) {
 	*(*jit_memory)++ = byte;
 }
 
-void emit_x86ret(char** jit_memory) {
-	emit_byte(jit_memory, OPCODE_RET);
-}
-
 void emit_rex(char **buf, int w, int reg, int rm) {
 	uint8_t rex = REX_BASE;
 	if (w) rex |= REX_W;       // 64-bit
@@ -45,13 +41,21 @@ void emit_rex(char **buf, int w, int reg, int rm) {
 	if (rex != REX_BASE) emit_byte(buf, rex);
 }
 
+void emit_x86ret(char** jit_memory) {
+	emit_byte(jit_memory, OPCODE_RET);
+}
+
+static inline void emit_x86reg_reg(char **jit_memory, uint8_t opcode, int reg, int rm) {
+	emit_rex(jit_memory, 1, reg, rm);
+	emit_byte(jit_memory, opcode);
+	emit_byte(jit_memory, MODRM(0b11, reg, rm));
+}
+
 // just for debugging purposes
 void emit_x86ret_reg(char **jit_memory, int reg) {
 	int src = VMRegMap[reg];
 
-	emit_rex(jit_memory, 1, src, X86_RAX);
-	emit_byte(jit_memory, OPCODE_MOV_REG_REG);  // MOV r/m64, r64
-	emit_byte(jit_memory, MODRM(0b11, src, X86_RAX));
+	emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, X86_RAX);
 
 	emit_byte(jit_memory, OPCODE_RET); // RET
 }
@@ -62,9 +66,7 @@ void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 
 	// register to register
 	if (dst != X86_SPILL && src != X86_SPILL) {
-		emit_rex(jit_memory, 1, src, dst);
-		emit_byte(jit_memory, OPCODE_MOV_REG_REG);
-		emit_byte(jit_memory, MODRM(0b11, src, dst));
+		emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, dst);
 	} else {
 		printf("TODO: implement this lol\n");
 		exit(1);
@@ -95,23 +97,14 @@ void emit_add(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int
 	if (dst != X86_SPILL && rhs != X86_SPILL && lhs != X86_SPILL) {
 		if (dst == lhs) {
 			// emit rhs to dst
-			emit_rex(jit_memory, 1, rhs, dst);
-			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
-			emit_byte(jit_memory, MODRM(0b11, rhs, dst));
+			emit_x86reg_reg(jit_memory, OPCODE_ADD_REG_REG, rhs, dst);
 		} else if (dst == rhs) {
 			// emit lhs to dst
-			emit_rex(jit_memory, 1, lhs, dst);
-			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
-			emit_byte(jit_memory, MODRM(0b11, lhs, dst));
+			emit_x86reg_reg(jit_memory, OPCODE_ADD_REG_REG, lhs, dst);
 		} else {
 			// rd is unique, mov lhs into rd then add rhs
-			emit_rex(jit_memory, 1, lhs, dst);
-			emit_byte(jit_memory, OPCODE_MOV_REG_REG);
-			emit_byte(jit_memory, MODRM(0b11, lhs, dst));
-
-			emit_rex(jit_memory, 1, rhs, dst);
-			emit_byte(jit_memory, OPCODE_ADD_REG_REG);
-			emit_byte(jit_memory, MODRM(0b11, rhs, dst));
+			emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, lhs, dst);
+			emit_x86reg_reg(jit_memory, OPCODE_ADD_REG_REG, rhs, dst);
 		}
 	} else {
 		printf("TODO: modularize ts\n");
