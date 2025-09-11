@@ -11,9 +11,22 @@
 
 #define REXW       (REX_BASE | REX_W)
 
-#define OPCODE_MOV_REG_IMM  0xB8
 #define OPCODE_MOV_REG_REG  0x89
+#define OPCODE_MOV_REG_IMM  0xB8
+
 #define OPCODE_ADD_REG_REG  0x01
+#define OPCODE_SUB_REG_REG  0x29
+
+// TODO: implement horrifying ModRM shit
+// /4 -> MUL
+// /6 -> DIV
+#define OPCODE_MUL_REG_REG  0xF7
+#define OPCODE_DIV_REG_REG  0xF7
+
+#define OPCODE_AND_REG_REG  0x21
+#define OPCODE_OR_REG_REG   0x09
+#define OPCODE_XOR_REG_REG  0x31
+
 #define OPCODE_RET          0xC3
 
 #define MODRM(mod, reg, rm) ((uint8_t)(((mod) << 6) | (((reg) & 7) << 3) | ((rm) & 7)))

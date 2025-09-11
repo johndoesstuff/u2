@@ -16,40 +16,28 @@ struct {
 	char* name;
 } typedef Instruction;
 
-Instruction Instructions[] = {
-	// DATA
-	{ FORMAT_R, "mov" },    // copy rs1 to rd
-	{ FORMAT_I, "li" },     // load immediate to rd
-	{ FORMAT_I, "ld" },     // load memory to rd
-	{ FORMAT_I, "st" },     // store to memory from rd
+enum {
+	U2_MOV,
+	U2_LI,
+	U2_LD,
+	U2_ST,
+	U2_ADD,
+	U2_SUB,
+	U2_MUL,
+	U2_DIV,
+	U2_AND,
+	U2_OR,
+	U2_XOR,
+	U2_NOT,
+	U2_SHL,
+	U2_SHR,
+	U2_CMP,
+	U2_JMP,
+	U2_JE,
+	U2_JNE,
+	U2_JL,
+	U2_JG,
+} typedef Opcode;
 
-	// ARITHMETIC
-	{ FORMAT_F, "add" },    // add rs1 and rs2 and store in rd
-	{ FORMAT_F, "sub" },    // subtract rs1 and rs2 and store in rd
-	{ FORMAT_F, "mul" },    // multiply rs1 and rs2 and store in rd
-	{ FORMAT_F, "div" },    // divide rs1 and rs2 and store in rd
-
-	// BITWISE
-	{ FORMAT_F, "and" },    // and rs1 and rs2 and store in rd
-	{ FORMAT_F, "or" },     // or rs1 and rs2 and store in rd
-	{ FORMAT_F, "xor" },    // xor rs1 and rs2 and store in rd
-	{ FORMAT_R, "or" },     // not rs1 and store in rd
-
-	// BITWISE SHIFT
-	{ FORMAT_I, "shl" },    // shift rd left by imm
-	{ FORMAT_I, "shr" },    // shift rd right by imm
-
-	// COMPARISON
-	{ FORMAT_R, "cmp" },    // compare registers (TODO: figure out wtf that means and how the hell im going to implement special registers)
-
-	// CONTROL
-	{ FORMAT_J, "jmp" },    // jump to imm
-	{ FORMAT_J, "je" },    // jump if equal
-	{ FORMAT_J, "jne" },    // jump if not equal
-	{ FORMAT_J, "jl" },    // jump if less than
-	{ FORMAT_J, "jg" },    // jump if greater than
-
-	// TODO: is stack build into vm?
-};
-
-int Instruction_Count = sizeof(Instructions)/sizeof(Instructions[0]);
+extern Instruction Instructions[];
+extern const int Instruction_Count;

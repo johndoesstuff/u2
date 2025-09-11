@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
-#include "../common/instruction.h"
 #include "../common/config.h"
+#include "../common/instruction.h"
 
 #include "x86jit.h"
 
