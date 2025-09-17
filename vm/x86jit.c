@@ -47,7 +47,7 @@ void emit_x86ret(char** jit_memory) {
 }
 
 static inline void emit_x86reg_reg(char **jit_memory, uint8_t opcode, int reg, int rm) {
-	emit_rex(jit_memory, 1, reg, rm);
+	//emit_rex(jit_memory, 1, reg, rm);
 	emit_byte(jit_memory, opcode);
 	emit_byte(jit_memory, MODRM(0b11, reg, rm));
 }
@@ -96,13 +96,14 @@ void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 }
 
 void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
+	uint64_t u64 = imm;
 	int dst = VMRegMap[rd];
 	
 	if (dst != X86_SPILL) {
-		emit_rex(jit_memory, 1, 0, dst);
+		//emit_rex(jit_memory, 1, 0, dst);
 		emit_byte(jit_memory, OPCODE_MOV_REG_IMM + (dst & 7));
 
-		for (int i = 0; i < 8; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
+		for (int i = 0; i < 4; i++) emit_byte(jit_memory, (u64 >> (i * 8)) & 0xFF);
 	} else {
 		printf("TODO: implement this aswell\n");
 		exit(1);
