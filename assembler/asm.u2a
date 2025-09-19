@@ -1,4 +1,4 @@
 ; add 2 numbers
-li r1 8
-li r2 3
-add r3 r1 r2
+li r1 5
+li r2 4
+sub r3 r1 r2
