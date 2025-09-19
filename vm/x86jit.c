@@ -46,6 +46,12 @@ void emit_x86ret(char** jit_memory) {
 	emit_byte(jit_memory, OPCODE_RET);
 }
 
+static inline void emit_x86reg(char **jit_memory, uint8_t opcode, int reg) {
+	emit_rex(jit_memory, 1, reg, 0);
+	emit_byte(jit_memory, opcode);
+	emit_byte(jit_memory, 0xD0 | (reg & 7));
+}
+
 static inline void emit_x86reg_reg(char **jit_memory, uint8_t opcode, int reg, int rm) {
 	emit_rex(jit_memory, 1, reg, rm);
 	emit_byte(jit_memory, opcode);
@@ -77,6 +83,22 @@ void emit_binary_rr(char **jit_memory, uint8_t opcode, int dst, int lhs, int rhs
 		// rd is unique, mov lhs into rd then add rhs
 		emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, lhs, dst);
 		emit_x86reg_reg(jit_memory, opcode, rhs, dst);
+	}
+}
+
+void emit_unary_rr(char **jit_memory, uint8_t opcode, int dst, int src) {
+	if (dst == X86_SPILL || src == X86_SPILL) {
+		printf("TODO: implement spill\n");
+		exit(1);
+	}
+
+	if (dst == src) {
+		// emit rhs to dst
+		emit_x86reg(jit_memory, opcode, dst);
+	} else {
+		// rd is unique, mov lhs into rd then add rhs
+		emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, dst);
+		emit_x86reg(jit_memory, opcode, dst);
 	}
 }
 
@@ -145,6 +167,11 @@ void emit_xor(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
+void emit_not(char** jit_memory, unsigned int rd, unsigned int rs1) {
+	emit_unary_rr(jit_memory, OPCODE_NOT_REG, 
+			VMRegMap[rd], VMRegMap[rs1]);
+}
+
 void emit_jit(char** jit_memory,
 		unsigned int opcode,
 		unsigned int rd,
@@ -180,6 +207,9 @@ void emit_jit(char** jit_memory,
 			break;
 		case U2_XOR:
 			emit_xor(jit_memory, rd, rs1, rs2);
+			break;
+		case U2_NOT:
+			emit_not(jit_memory, rd, rs1);
 			break;
 		default:
 			printf("Instruction not implemented yet!\n");

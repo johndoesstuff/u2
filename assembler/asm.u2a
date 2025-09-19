@@ -1,2 +1,3 @@
 ; add 2 numbers
-li r1 5
+li r1 137
+not r1 r1

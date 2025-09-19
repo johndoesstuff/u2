@@ -27,6 +27,8 @@
 #define OPCODE_OR_REG_REG   0x09
 #define OPCODE_XOR_REG_REG  0x31
 
+#define OPCODE_NOT_REG      0xF7
+
 #define OPCODE_RET          0xC3
 
 #define MODRM(mod, reg, rm) ((uint8_t)(((mod) << 6) | (((reg) & 7) << 3) | ((rm) & 7)))
