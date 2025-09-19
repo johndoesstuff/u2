@@ -186,6 +186,12 @@ void emit_jit(char** jit_memory,
 		case U2_LI:
 			emit_li(jit_memory, rd, imm);
 			break;
+		case U2_LD:
+			emit_ld(jit_memory, rd, rs1);
+			break;
+		case U2_ST:
+			emit_st(jit_memory, rd, rs1);
+			break;
 		case U2_ADD:
 			emit_add(jit_memory, rd, rs1, rs2);
 			break;
