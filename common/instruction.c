@@ -33,7 +33,7 @@ Instruction Instructions[] = {
 	[U2_JL]  = { FORMAT_J, "jl" },     // jump if less than
 	[U2_JG]  = { FORMAT_J, "jg" },     // jump if greater than
 
-	// TODO: is stack build into vm?
+	// TODO: is stack built into vm?
 };
 
 const int Instruction_Count = sizeof(Instructions)/sizeof(Instructions[0]);

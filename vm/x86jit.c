@@ -76,10 +76,7 @@ void emit_binary_rr(char **jit_memory, uint8_t opcode, int dst, int lhs, int rhs
 	if (dst == lhs) {
 		// emit rhs to dst
 		emit_x86reg_reg(jit_memory, opcode, rhs, dst);
-	} else if (dst == rhs) {
-		// emit lhs to dst
-		emit_x86reg_reg(jit_memory, opcode, lhs, dst);
-	} else {
+	} else { // dst == rhs could optimize but only if commutative
 		// rd is unique, mov lhs into rd then add rhs
 		emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, lhs, dst);
 		emit_x86reg_reg(jit_memory, opcode, rhs, dst);
@@ -118,6 +115,8 @@ void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 }
 
 void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
+	// TODO: implement 32bit and 64bit imm using op 63
+	// this function can only currently emit 32bit imms
 	int dst = VMRegMap[rd];
 	
 	if (dst != X86_SPILL) {
@@ -179,7 +178,7 @@ void emit_jit(char** jit_memory,
 		unsigned int rs2,
 		unsigned int imm) {
 	Opcode op = (Opcode)opcode;
-	switch (opcode) {
+	switch (op) {
 		// TODO: modularly enum opcodes based on common instruction.h
 		case U2_MOV:
 			emit_mov(jit_memory, rd, rs1);
