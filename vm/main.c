@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
 	}
 
 	// return from jit
-	emit_x86ret_reg(&jit_memory, 3);
+	emit_x86ret_reg(&jit_memory, 1);
 
 	// dump machine code because god knows im not getting this right my first try
 	// or my second or third or fourth

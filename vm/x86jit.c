@@ -100,9 +100,10 @@ void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
 	
 	if (dst != X86_SPILL) {
 		emit_rex(jit_memory, 1, 0, dst);
-		emit_byte(jit_memory, OPCODE_MOV_REG_IMM + (dst & 7));
+		emit_byte(jit_memory, 0xc7); // 64bit load imm
+		emit_byte(jit_memory, 0xc0 | dst);
 
-		for (int i = 0; i < 8; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
+		for (int i = 0; i < 4; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
 	} else {
 		printf("TODO: implement this aswell\n");
 		exit(1);
