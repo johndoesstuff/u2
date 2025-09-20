@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdint.h>
+#include <ctype.h>    // tolower
+#include <stdint.h>   // uint32_t, uint64_t, ...
+#include <inttypes.h> // PRIX64
 
 #include "error.c"
 
@@ -100,7 +101,7 @@ uint64_t expect_immediate(char* immediate) {
 		}
 	}
 
-	uint64_t val = strtol(immediate, &endptr, base);
+	uint64_t val = strtoull(immediate, &endptr, base);
 	if (*endptr != '\0') {
 		printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
 		exit(1);
@@ -242,16 +243,45 @@ int main(int argc, char** argv) {
 		}
 
 		// generate bytecode
+		uint32_t max_imm = (1 << 14) - 1;
+		if (imm > max_imm) {
+			// check for 32bit or 64bit extension
+			rs2 = (imm > UINT32_MAX) + 1;
+		}
+		printf("DEBUG: imm = %" PRIX64 "\n", imm);
 		
-		unsigned int instBC = 0;
+		uint32_t instBC = 0;
 		set_op(&instBC, opcode);
-		if (rd != -1) set_rd(&instBC, rd);
-		if (rs1 != -1) set_rs1(&instBC, rs1);
-		if (rs2 != -1) set_rs2(&instBC, rs2);
-		if (imm != -1) set_imm(&instBC, imm);
-		printf("Instruction: %X\n", instBC);
+		set_rd(&instBC, rd);
+		set_rs1(&instBC, rs1);
+		set_rs2(&instBC, rs2);
+		set_imm(&instBC, imm);
+		if (rs2 && instruction.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
+			set_imm(&instBC, 0); // set immediate to 0 for clarity
+			switch (instruction.format) { // check imm extension is supported
+				case FORMAT_J:
+				case FORMAT_I:
+				case FORMAT_M:
+					break;
+				default:
+					printf("If you are seeing this something has gone seriously wrong and it's probably my fault.\n");
+					exit(1);
+			}
+			printf("Instruction: %X (%dbit ext)\n", instBC, 32*rs2);
+			emit_inst(instBC, bcFile);
+			uint32_t immExt = (uint32_t)imm;
+			printf("Imm extension: %X\n", immExt);
+			emit_inst(immExt, bcFile);
+			if (rs2 == 2) {
+				immExt = (uint32_t)(imm >> 32);
+				printf("Imm extension: %X\n", immExt);
+				emit_inst(immExt, bcFile); // 64bit extension
+			}
+		} else {
+			printf("Instruction: %X\n", instBC);
+			emit_inst(instBC, bcFile);
+		}
 
-		emit_inst(instBC, bcFile);
 
 		// cleanup
 		free(opargs);

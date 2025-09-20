@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
 	uint32_t instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
-		printf("Read instruction %d (0x%08X)\n", instruction, instruction);
+		printf("Read instruction %u (0x%08X)\n", instruction, instruction);
 
 		uint32_t opcode = getOpcode(instruction);
 		uint32_t rd = getRd(instruction);
