@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
 			// check for 32bit or 64bit extension
 			rs2 = (imm > UINT32_MAX) + 1;
 		}
-		printf("DEBUG: imm = %" PRIX64 "\n", imm);
+		//printf("DEBUG: imm = %" PRIX64 "\n", imm);
 		
 		uint32_t instBC = 0;
 		set_op(&instBC, opcode);
@@ -256,6 +256,8 @@ int main(int argc, char** argv) {
 		set_rs1(&instBC, rs1);
 		set_rs2(&instBC, rs2);
 		set_imm(&instBC, imm);
+
+		// check for long immediates
 		if (rs2 && instruction.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
 			set_imm(&instBC, 0); // set immediate to 0 for clarity
 			switch (instruction.format) { // check imm extension is supported

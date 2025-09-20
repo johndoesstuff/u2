@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+#include <sys/mman.h>   // mmap
+#include <inttypes.h>   // PRIX64
 #include "../common/config.h"
 #include "../common/instruction.h"
 
@@ -15,7 +16,7 @@
 	Usage = u2vm bytecode.u2b
 */
 
-int nextInstruction(FILE* f, uint32_t* inst) {
+uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
 	if (n != 1) {
 		if (feof(f)) {
@@ -90,12 +91,49 @@ int main(int argc, char** argv) {
 		uint32_t rd = getRd(instruction);
 		uint32_t rs1 = getRs1(instruction);
 		uint32_t rs2 = getRs2(instruction);
-		uint32_t immediate = getImm(instruction);
+		uint64_t immediate = getImm(instruction);
 
 		Instruction instructionObj = Instructions[opcode];
 
 		// print decoded instruction
 		printf("%s", instructionObj.name);
+
+		//printf("DEBUG: rs2 = %d\n", rs2);
+
+		// check for long immediates
+		if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
+			switch (instructionObj.format) { // check imm extension is supported
+				case FORMAT_J:
+				case FORMAT_I:
+				case FORMAT_M:
+					break;
+				default:
+					printf("Immediate extension is not supported for instructions of type %s", instructionObj.name);
+					exit(1);
+			}
+
+			// if rs2 contains 1 or 2 load next rs2 bytes into imm
+			if (rs2 == 1 || rs2 == 2) {
+				uint32_t immExt;
+				int captured = nextInstruction(bytecodeFile, &immExt);
+				if (!captured) {
+					printf("Expected immediate extension but instead recieved EOF? Check rs2 value for last inst.\n");
+				}
+				immediate = immExt;
+				if (rs2 == 2) {
+					captured = nextInstruction(bytecodeFile, &immExt);
+					if (!captured) {
+						printf("Expected immediate extension but instead recieved EOF? Check rs2 value for second to last inst.\n");
+					}
+					immediate |= (uint64_t)immExt << 32;
+				}
+			} else {
+				printf("Invalid rs2 value\n");
+			}
+		}
+
+
+
 		switch (instructionObj.format) {
 			case FORMAT_F:
 				printf(" r%d r%d r%d", rd, rs1, rs2);
@@ -104,10 +142,10 @@ int main(int argc, char** argv) {
 				printf(" r%d r%d", rd, rs1);
 				break;
 			case FORMAT_I:
-				printf(" r%d %d", rd, immediate);
+				printf(" r%d %" PRIX64, rd, immediate);
 				break;
 			case FORMAT_J:
-				printf(" %d", immediate);
+				printf(" %" PRIX64, immediate);
 				break;
 			case FORMAT_D:
 				printf(" r%d", rd);
