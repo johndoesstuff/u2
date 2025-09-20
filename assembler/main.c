@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #include "error.c"
 
@@ -16,7 +17,7 @@
 	Usage = u2asm asm.u2a bytecode.u2b
  */
 
-int countDelim(char* str, char delim) {
+int count_delim(char* str, char delim) {
 	int count = 0;
 	for (char* clone = str; *clone != '\0'; clone++) {
 		if (*clone == delim) count++;
@@ -24,42 +25,42 @@ int countDelim(char* str, char delim) {
 	return count;
 }
 
-void setBitRange(int *instruction, int value, int start, int length) {
+void set_bit_range(uint32_t *instruction, int value, int start, int length) {
 	int mask = ((1 << length) - 1) << start;
 	*instruction &= ~mask;
 	*instruction |= (value & ((1 << length) - 1)) << start;
 }
 
-void setOp(int* instruction, int opcode) {
-	setBitRange(instruction, opcode, 26, 6);
+void set_op(uint32_t* instruction, uint32_t opcode) {
+	set_bit_range(instruction, opcode, 26, 6);
 }
 
-void setRd(int* instruction, int rd) {
-	setBitRange(instruction, rd, 22, 4);
+void set_rd(uint32_t* instruction, uint32_t rd) {
+	set_bit_range(instruction, rd, 22, 4);
 }
 
-void setRs1(int* instruction, int rs1) {
-	setBitRange(instruction, rs1, 18, 4);
+void set_rs1(uint32_t* instruction, uint32_t rs1) {
+	set_bit_range(instruction, rs1, 18, 4);
 }
 
-void setRs2(int* instruction, int rs2) {
-	setBitRange(instruction, rs2, 14, 4);
+void set_rs2(uint32_t* instruction, uint32_t rs2) {
+	set_bit_range(instruction, rs2, 14, 4);
 }
 
-void setImm(int* instruction, int imm) {
-	setBitRange(instruction, imm, 0, 14);
+void set_imm(uint32_t* instruction, uint64_t imm) {
+	set_bit_range(instruction, (int)imm, 0, 14);
 }
 
-void emitByte(unsigned char byte, FILE* fptr) {
+void emit_byte(uint8_t byte, FILE* fptr) {
 	//printf("Emit %X\n", byte);
-	fwrite(&byte, sizeof(unsigned char), 1, fptr);
+	fwrite(&byte, sizeof(uint8_t), 1, fptr);
 }
 
-void emitInst(unsigned int inst, FILE* fptr) {
-	fwrite(&inst, sizeof(unsigned int), 1, fptr);
+void emit_inst(uint32_t inst, FILE* fptr) {
+	fwrite(&inst, sizeof(uint32_t), 1, fptr);
 }
 
-int toRegister(char* reg) {
+uint32_t expect_register(char* reg) {
 	if (reg == NULL) {
 		printf("Internal Error: Invalid Register\n");
 		exit(1);
@@ -79,7 +80,35 @@ int toRegister(char* reg) {
 	return atoi(reg);
 }
 
-int getFirstChar(char* str, char ch) {
+uint64_t expect_immediate(char* immediate) {
+	if (immediate == NULL) {
+		printf("Internal Error: Invalid Immediate\n");
+		exit(1);
+	}
+	
+	char* endptr;
+	int base = 10;
+
+	// lets cover all our bases! heh..
+	if (strlen(immediate) > 2 && immediate[0] == '0') {
+		if (immediate[1] == 'x' || immediate[1] == 'X') {
+			base = 16;
+			immediate += 2; // skip 0x
+		} else if (immediate[1] == 'b' || immediate[1] == 'B') {
+			base = 2;
+			immediate += 2; // skip 0b
+		}
+	}
+
+	uint64_t val = strtol(immediate, &endptr, base);
+	if (*endptr != '\0') {
+		printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
+		exit(1);
+	}
+	return val;
+}
+
+int get_first_char(char* str, char ch) {
 	// return -1 if not found
 	for (int i = 0; i < strlen(str); i++) {
 		if (str[i] == ch) return i;
@@ -118,13 +147,13 @@ int main(int argc, char** argv) {
 		line[read - 1] = '\0';
 
 		// ignore past ;
-		int comment = getFirstChar(line, ';');
+		int comment = get_first_char(line, ';');
 		if (comment != -1) {
 			line[comment] = '\0';
 		}
 
 		// get op components
-		char** opargs = malloc(sizeof(char*) * (countDelim(line, ' ') + 1));
+		char** opargs = malloc(sizeof(char*) * (count_delim(line, ' ') + 1));
 		int opargsc = 0;
 		for (char* pch = strtok(line, " "); pch != NULL; pch = strtok(NULL, " ")) {
 			opargs[opargsc++] = pch;
@@ -156,6 +185,9 @@ int main(int argc, char** argv) {
 			case FORMAT_F:
 				if (opargsc != 4) error_argnum(opargsc, 4, instruction.name, linec);
 				break;
+			case FORMAT_M:
+				if (opargsc != 4) error_argnum(opargsc, 4, instruction.name, linec);
+				break;
 			case FORMAT_R:
 				if (opargsc != 3) error_argnum(opargsc, 3, instruction.name, linec);
 				break;
@@ -173,30 +205,34 @@ int main(int argc, char** argv) {
 				break;
 		}
 
-		int rd  = -1;
-		int rs1 = -1;
-		int rs2 = -1;
-		int imm = -1;
+		uint32_t rd  = 0;
+		uint32_t rs1 = 0;
+		uint32_t rs2 = 0;
+		uint64_t imm = 0;
 
 		switch (instruction.format) {
 			case FORMAT_F:
-				rd = toRegister(opargs[1]);
-				rs1 = toRegister(opargs[2]);
-				rs2 = toRegister(opargs[3]);
+				rd = expect_register(opargs[1]);
+				rs1 = expect_register(opargs[2]);
+				rs2 = expect_register(opargs[3]);
 				break;
+			case FORMAT_M:
+				rd = expect_register(opargs[1]);
+				rs1 = expect_register(opargs[2]);
+				imm = expect_immediate(opargs[3]);
 			case FORMAT_R:
-				rd = toRegister(opargs[1]);
-				rs1 = toRegister(opargs[2]);
+				rd = expect_register(opargs[1]);
+				rs1 = expect_register(opargs[2]);
 				break;
 			case FORMAT_I:
-				rd = toRegister(opargs[1]);
-				imm = atoi(opargs[2]);
+				rd = expect_register(opargs[1]);
+				imm = expect_immediate(opargs[2]);
 				break;
 			case FORMAT_J:
-				imm = atoi(opargs[1]);
+				imm = expect_immediate(opargs[1]);
 				break;
 			case FORMAT_D:
-				rd = toRegister(opargs[1]);
+				rd = expect_register(opargs[1]);
 				break;
 			case FORMAT_NONE:
 				break;
@@ -208,14 +244,14 @@ int main(int argc, char** argv) {
 		// generate bytecode
 		
 		unsigned int instBC = 0;
-		setOp(&instBC, opcode);
-		if (rd != -1) setRd(&instBC, rd);
-		if (rs1 != -1) setRs1(&instBC, rs1);
-		if (rs2 != -1) setRs2(&instBC, rs2);
-		if (imm != -1) setImm(&instBC, imm);
+		set_op(&instBC, opcode);
+		if (rd != -1) set_rd(&instBC, rd);
+		if (rs1 != -1) set_rs1(&instBC, rs1);
+		if (rs2 != -1) set_rs2(&instBC, rs2);
+		if (imm != -1) set_imm(&instBC, imm);
 		printf("Instruction: %X\n", instBC);
 
-		emitInst(instBC, bcFile);
+		emit_inst(instBC, bcFile);
 
 		// cleanup
 		free(opargs);

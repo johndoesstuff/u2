@@ -30,11 +30,11 @@ int VMRegMap[16] = {
 
 uint64_t VMRegSpill[16] = {0};
 
-static inline void emit_byte(char** jit_memory, uint8_t byte) {
+static inline void emit_byte(uint8_t** jit_memory, uint8_t byte) {
 	*(*jit_memory)++ = byte;
 }
 
-void emit_rex(char **buf, int w, int reg, int rm) {
+void emit_rex(uint8_t** buf, uint32_t w, uint32_t reg, uint32_t rm) {
 	uint8_t rex = REX_BASE;
 	if (w) rex |= REX_W;       // 64-bit
 	if (reg & 8) rex |= REX_R; // R
@@ -42,24 +42,24 @@ void emit_rex(char **buf, int w, int reg, int rm) {
 	if (rex != REX_BASE) emit_byte(buf, rex);
 }
 
-void emit_x86ret(char** jit_memory) {
+void emit_x86ret(uint8_t** jit_memory) {
 	emit_byte(jit_memory, OPCODE_RET);
 }
 
-static inline void emit_x86reg(char **jit_memory, uint8_t opcode, int reg) {
+static inline void emit_x86reg(uint8_t** jit_memory, uint8_t opcode, uint32_t reg) {
 	emit_rex(jit_memory, 1, reg, 0);
 	emit_byte(jit_memory, opcode);
 	emit_byte(jit_memory, 0xD0 | (reg & 7));
 }
 
-static inline void emit_x86reg_reg(char **jit_memory, uint8_t opcode, int reg, int rm) {
+static inline void emit_x86reg_reg(uint8_t** jit_memory, uint8_t opcode, uint32_t reg, uint32_t rm) {
 	emit_rex(jit_memory, 1, reg, rm);
 	emit_byte(jit_memory, opcode);
 	emit_byte(jit_memory, MODRM(0b11, reg, rm));
 }
 
 // just for debugging purposes
-void emit_x86ret_reg(char **jit_memory, int reg) {
+void emit_x86ret_reg(uint8_t** jit_memory, uint32_t reg) {
 	int src = VMRegMap[reg];
 
 	emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, X86_RAX);
@@ -67,7 +67,7 @@ void emit_x86ret_reg(char **jit_memory, int reg) {
 	emit_byte(jit_memory, OPCODE_RET); // RET
 }
 
-void emit_binary_rr(char **jit_memory, uint8_t opcode, int dst, int lhs, int rhs) {
+void emit_binary_rr(uint8_t** jit_memory, uint8_t opcode, uint32_t dst, uint32_t lhs, uint32_t rhs) {
 	if (dst == X86_SPILL || lhs == X86_SPILL || rhs == X86_SPILL) {
 		printf("TODO: implement spill\n");
 		exit(1);
@@ -83,7 +83,7 @@ void emit_binary_rr(char **jit_memory, uint8_t opcode, int dst, int lhs, int rhs
 	}
 }
 
-void emit_unary_rr(char **jit_memory, uint8_t opcode, int dst, int src) {
+void emit_unary_rr(uint8_t** jit_memory, uint8_t opcode, uint32_t dst, uint32_t src) {
 	if (dst == X86_SPILL || src == X86_SPILL) {
 		printf("TODO: implement spill\n");
 		exit(1);
@@ -99,7 +99,7 @@ void emit_unary_rr(char **jit_memory, uint8_t opcode, int dst, int src) {
 	}
 }
 
-void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
+void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 	int dst = VMRegMap[rd];
 	int src = VMRegMap[rs1];
 
@@ -114,7 +114,7 @@ void emit_mov(char** jit_memory, unsigned int rd, unsigned int rs1) {
 	// TODO: implement spill
 }
 
-void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
+void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
 	// TODO: implement 32bit and 64bit imm using op 63
 	// this function can only currently emit 32bit imms
 	int dst = VMRegMap[rd];
@@ -131,52 +131,60 @@ void emit_li(char** jit_memory, unsigned int rd, unsigned int imm) {
 	}
 }
 
-void emit_add(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_ld(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
+	
+}
+
+void emit_st(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
+	
+}
+
+void emit_add(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_ADD_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_sub(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_sub(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_SUB_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_mul(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_mul(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_MUL_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_div(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_div(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_DIV_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_and(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_and(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_AND_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_or(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_or(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_OR_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_xor(char** jit_memory, unsigned int rd, unsigned int rs1, unsigned int rs2) {
+void emit_xor(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 	emit_binary_rr(jit_memory, OPCODE_XOR_REG_REG, 
 			VMRegMap[rd], VMRegMap[rs1], VMRegMap[rs2]);
 }
 
-void emit_not(char** jit_memory, unsigned int rd, unsigned int rs1) {
+void emit_not(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 	emit_unary_rr(jit_memory, OPCODE_NOT_REG, 
 			VMRegMap[rd], VMRegMap[rs1]);
 }
 
-void emit_jit(char** jit_memory,
-		unsigned int opcode,
-		unsigned int rd,
-		unsigned int rs1,
-		unsigned int rs2,
-		unsigned int imm) {
+void emit_jit(uint8_t** jit_memory,
+		uint32_t opcode,
+		uint32_t rd,
+		uint32_t rs1,
+		uint32_t rs2,
+		uint64_t imm) {
 	Opcode op = (Opcode)opcode;
 	switch (op) {
 		// TODO: modularly enum opcodes based on common instruction.h
@@ -187,10 +195,10 @@ void emit_jit(char** jit_memory,
 			emit_li(jit_memory, rd, imm);
 			break;
 		case U2_LD:
-			emit_ld(jit_memory, rd, rs1);
+			emit_ld(jit_memory, rd, rs1, imm);
 			break;
 		case U2_ST:
-			emit_st(jit_memory, rd, rs1);
+			emit_st(jit_memory, rd, rs1, imm);
 			break;
 		case U2_ADD:
 			emit_add(jit_memory, rd, rs1, rs2);

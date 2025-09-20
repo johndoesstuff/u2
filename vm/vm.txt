@@ -12,7 +12,7 @@ Instruction Width: 4 bytes (unsigned int)
 [ opcode ] [ rd ] [ rs1 ] [ rs2 ] [ immediate ]
 This allows for 64 opcodes, 16 registers, 14 bit immediates without extension (max signed 8191), and a maximum of 3 registers per instruction.
 
-OPCODE 63: Extend operation (for loading 32bit and 64bit imms)
-31......26     25      24.....................0
-[   63   ] [1:64,0:32] [      Default: 0      ]
-For an operation extension bytes 0-24 should be set to 0, otherwise opcode 63 is treated as a special opcode for interfacing with (not yet defined) system calls and other cool things I might implement later but are optional to the language as a whole. Bit 25 will determine if the vm should read the next 4 bytes as an imm or the next 8 bytes as an imm. A value of 0 will read the next 4 bytes and 1 will read the next 8. 
+For instructions using an immediate the value of rs2 allows you to extend the bytes of immediate storage.
+- 0 indicates no immediate extension (use regular 14 bits)
+- 1 indicates extra instruction (4-bytes) for immediate storage (disregard value in 14 bits)
+- 2 indicates extra instruction (8-bytes) for immediate storage (disregard value in 14 bits)

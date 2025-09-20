@@ -3,12 +3,13 @@
 */
 
 enum {
-	FORMAT_F,    // 3 register :            ins r0 r1 r2
-	FORMAT_R,    // register to register :  ins r0 r1
-	FORMAT_I,    // immediate to register : ins r0 im
-	FORMAT_J,    // immediate opcode :      ins im
-	FORMAT_D,    // register opcode :       ins r0
-	FORMAT_NONE, // opcode :                ins
+	FORMAT_F,    // 3 register :                      ins r0 r1 r2
+	FORMAT_M,    // register to register + offset :   ins r0 r1 im
+	FORMAT_R,    // register to register :            ins r0 r1
+	FORMAT_I,    // immediate to register :           ins r0 im
+	FORMAT_J,    // immediate opcode :                ins im
+	FORMAT_D,    // register opcode :                 ins r0
+	FORMAT_NONE, // opcode :                          ins
 } typedef InstructionFormat;
 
 struct {

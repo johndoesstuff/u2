@@ -15,8 +15,8 @@
 	Usage = u2vm bytecode.u2b
 */
 
-int nextInstruction(FILE* f, unsigned int* inst) {
-	size_t n = fread(inst, sizeof(unsigned int), 1, f);
+int nextInstruction(FILE* f, uint32_t* inst) {
+	size_t n = fread(inst, sizeof(uint32_t), 1, f);
 	if (n != 1) {
 		if (feof(f)) {
 			return 0;
@@ -28,24 +28,24 @@ int nextInstruction(FILE* f, unsigned int* inst) {
 	return 1;
 }
 
-unsigned int getOpcode(unsigned int inst) {
+uint32_t getOpcode(uint32_t inst) {
 	return inst >> (32 - OPCODE_BITS);
 }
 
-unsigned int getRd(unsigned int inst) {
+uint32_t getRd(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-unsigned int getRs1(unsigned int inst) {
+uint32_t getRs1(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - 2*REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-unsigned int getRs2(unsigned int inst) {
+uint32_t getRs2(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - 3*REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-unsigned int getImm(unsigned int inst) {
-	unsigned int mask = (1u << IMM_BITS) - 1;
+uint32_t getImm(uint32_t inst) {
+	uint32_t mask = (1u << IMM_BITS) - 1;
 	int imm = inst & mask;
 	// sign extend
 	if (imm & (1u << (IMM_BITS - 1))) {
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 	}
 
 	// prepare memory for jit execution
-	char *jit_memory = mmap(NULL,     // address
+	uint8_t *jit_memory = mmap(NULL,     // address
 			4096,             // size
 			PROT_READ | PROT_WRITE | PROT_EXEC,
 			MAP_PRIVATE | MAP_ANONYMOUS,
@@ -80,17 +80,17 @@ int main(int argc, char** argv) {
 		printf("Could not allocate memory for jit compilation!\n");
 		exit(1);
 	}
-	char *jit_base = jit_memory;
+	uint8_t *jit_base = jit_memory;
 
-	unsigned int instruction;
+	uint32_t instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
 		printf("Read instruction %d (0x%08X)\n", instruction, instruction);
 
-		unsigned int opcode = getOpcode(instruction);
-		unsigned int rd = getRd(instruction);
-		unsigned int rs1 = getRs1(instruction);
-		unsigned int rs2 = getRs2(instruction);
-		unsigned int immediate = getImm(instruction);
+		uint32_t opcode = getOpcode(instruction);
+		uint32_t rd = getRd(instruction);
+		uint32_t rs1 = getRs1(instruction);
+		uint32_t rs2 = getRs2(instruction);
+		uint32_t immediate = getImm(instruction);
 
 		Instruction instructionObj = Instructions[opcode];
 

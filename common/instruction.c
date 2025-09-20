@@ -4,8 +4,8 @@ Instruction Instructions[] = {
 	// DATA
 	[U2_MOV] = { FORMAT_R, "mov" },    // copy rs1 to rd
 	[U2_LI]  = { FORMAT_I, "li" },     // load immediate to rd
-	[U2_LD]  = { FORMAT_I, "ld" },     // load memory to rd
-	[U2_ST]  = { FORMAT_I, "st" },     // store to memory from rd
+	[U2_LD]  = { FORMAT_M, "ld" },     // load memory to rd
+	[U2_ST]  = { FORMAT_M, "st" },     // store to memory from rd
 
 	// ARITHMETIC
 	[U2_ADD] = { FORMAT_F, "add" },    // add rs1 and rs2 and store in rd

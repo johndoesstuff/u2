@@ -53,8 +53,8 @@ enum X86Reg {
 	X86_R15 = 15
 };
 
-void emit_jit(char** jit_memory, unsigned int opcode, unsigned int rd, unsigned int rs1, unsigned int rs2, unsigned int imm);
-void emit_x86ret(char** jit_memory);
-void emit_x86ret_reg(char **jit_memory, int reg); // debugging
+void emit_jit(uint8_t** jit_memory, uint32_t opcode, uint32_t rd, uint32_t rs1, uint32_t rs2, uint64_t imm);
+void emit_x86ret(uint8_t** jit_memory);
+void emit_x86ret_reg(uint8_t** jit_memory, uint32_t reg); // debugging
 
 #endif
