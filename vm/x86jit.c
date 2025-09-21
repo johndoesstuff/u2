@@ -16,6 +16,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/**
+	To convert u2 bytecode to x86 all u2 registers 
+	r1-r16 must be mapped to valid (and
+	non-destructive) x86 registers. Spill registers
+	are handled as memory instead of registers.
+
+	TODO: implement this (likely in regmap_u2a_x86)
+*/
+
 int VMRegMap[16] = {
 	_x86_RAX,
 	_x86_RCX,
@@ -35,28 +44,32 @@ int VMRegMap[16] = {
 	_x86_SPILL,
 };
 
+_x86_register regmap_u2a_x86(uint32_t reg) {
+	return VMRegMap[reg];
+}
+
 uint64_t VMRegSpill[16] = {0};
 
 void emit_x86ret(uint8_t** jit_memory) {
-	emit_byte(jit_memory, OPCODE_RET);
+	emit_x86instruction(jit_memory, &__ret, 0, 0, 0);
 }
 
 void emit_x86ret_reg(uint8_t** jit_memory, uint32_t rd) {
-	int dst = VMRegMap[rd - 1];
+	int dst = regmap_u2a_x86(rd - 1);
 	emit_x86instruction(jit_memory, &__mov_rm64_r64, dst, 0, 0);
 	emit_x86instruction(jit_memory, &__ret, dst, 0, 0);
 }
 
 void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
-	int dst = VMRegMap[rd];
-	int src = VMRegMap[rs1];
+	int dst = regmap_u2a_x86(rd);
+	int src = regmap_u2a_x86(rs1);
 
 	// genius optimization
 	if (dst == src) return;
 
 	// register to register
 	if (dst != _x86_SPILL && src != _x86_SPILL) {
-		//emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, dst);
+		emit_x86instruction(jit_memory, &__mov_rm64_r64, dst, src, 0);
 	} else {
 		printf("TODO: implement this lol\n");
 		exit(1);
@@ -66,7 +79,7 @@ void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 }
 
 void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
-	int dst = VMRegMap[rd];
+	int dst = regmap_u2a_x86(rd);
 
 	if (dst != _x86_SPILL) {
 		if (imm <= UINT32_MAX) {

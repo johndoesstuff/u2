@@ -50,7 +50,6 @@ _x86_encoding __ret = {
 	.reg_in_opcode = 0
 };
 
-
 void emit_byte(uint8_t** jit_memory, uint8_t byte) {
 	*(*jit_memory)++ = byte;
 }
@@ -71,20 +70,20 @@ void emit_modrm(uint8_t** jit_memory, uint8_t mod, uint8_t reg, uint8_t rm) {
 }
 
 void emit_x86instruction(uint8_t** jit_memory, _x86_encoding* encoding, uint32_t reg, uint32_t rm, uint64_t imm) {
-	if (encoding->needs_rex_w) {
-		emit_rex(jit_memory, 1, reg, rm);
+	if (encoding->needs_rex_w || reg >= _x86_R8 || rm >= _x86_R8) {
+		emit_rex(jit_memory, encoding->needs_rex_w, reg, rm);
 	}
 
 	if (encoding->reg_in_opcode) {
-		emit_byte(jit_memory, encoding->opcode | (reg % 8));
+		emit_byte(jit_memory, encoding->opcode | (reg & 7));
 	} else {
 		emit_byte(jit_memory, encoding->opcode);
 	}
 
 	if (encoding->opcode_ext >= 0) {
-		emit_modrm(jit_memory, 0b11, encoding->opcode_ext, rm);
+		emit_modrm(jit_memory, 0b11, encoding->opcode_ext, rm & 7);
 	} else if (encoding->opcode_ext == -2) {
-		emit_modrm(jit_memory, 0b11, reg, rm);
+		emit_modrm(jit_memory, 0b11, reg & 7, rm & 7);
 	}
 
 	for (int i = 0; i < encoding->imm_size; i++) {

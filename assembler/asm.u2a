@@ -1,2 +1,3 @@
 ; add 2 numbers
-li r1 0xBEEF
+li r3 0xACEFACEDBEEFDEAD
+mov r3, r1
