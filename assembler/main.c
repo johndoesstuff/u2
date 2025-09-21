@@ -78,7 +78,7 @@ uint32_t expect_register(char* reg) {
 		printf("Invalid Register, expected [r1-r16]\n");
 		exit(1);
 	}
-	return atoi(reg);
+	return atoi(reg) - 1;
 }
 
 uint64_t expect_immediate(char* immediate) {

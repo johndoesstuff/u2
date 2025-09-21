@@ -1,3 +1,5 @@
 ; add 2 numbers
-li r1 0xACEFACEDDEADBEEF
-not r1 r1
+li r1 0xDEADBEEF
+li r4 0xDEADBEEF
+li r5 0xDEADBEEF
+li r6 0xDEADBEEF

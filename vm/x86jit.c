@@ -60,7 +60,7 @@ static inline void emit_x86reg_reg(uint8_t** jit_memory, uint8_t opcode, uint32_
 
 // just for debugging purposes
 void emit_x86ret_reg(uint8_t** jit_memory, uint32_t reg) {
-	int src = VMRegMap[reg];
+	int src = VMRegMap[reg - 1];
 
 	emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, X86_RAX);
 
@@ -103,6 +103,9 @@ void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 	int dst = VMRegMap[rd];
 	int src = VMRegMap[rs1];
 
+	// genius optimization
+	if (dst == src) return;
+
 	// register to register
 	if (dst != X86_SPILL && src != X86_SPILL) {
 		emit_x86reg_reg(jit_memory, OPCODE_MOV_REG_REG, src, dst);
@@ -115,16 +118,25 @@ void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 }
 
 void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
-	// TODO: implement 32bit and 64bit imm using op 63
-	// this function can only currently emit 32bit imms
 	int dst = VMRegMap[rd];
+
+	// on x86 registers r8, r9, r10, ... are mapped to rax, rbx, rcx, ... with extra
+	// things for some reason
+	int reg86_special = dst >= 8;
+	int reg86_base = dst % 8;
 	
 	if (dst != X86_SPILL) {
-		emit_rex(jit_memory, 1, 0, dst);
-		emit_byte(jit_memory, 0xc7); // 64bit load imm
-		emit_byte(jit_memory, 0xc0 | dst);
-
-		for (int i = 0; i < 4; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
+		if (imm <= UINT32_MAX) {
+			// 32bit load imm
+			if (reg86_special) emit_byte(jit_memory, 0x41);
+			emit_byte(jit_memory, 0xB8 | reg86_base);
+			for (int i = 0; i < 4; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
+		} else {
+			// 64bit load imm
+			emit_rex(jit_memory, 1, 0, dst);
+			emit_byte(jit_memory, 0xB8 | dst);
+			for (int i = 0; i < 8; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
+		}
 	} else {
 		printf("TODO: implement this aswell\n");
 		exit(1);
