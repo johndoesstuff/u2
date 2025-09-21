@@ -175,10 +175,10 @@ int main(int argc, char** argv) {
 	printf("\n\n");
 
 	// try to execute jit memory
-	int (*func)() = (int (*)())jit_base;
-	int result = func();
+	uint64_t (*func)() = (uint64_t (*)())jit_base;
+	uint64_t result = func();
 
-	printf("%X\n", result);
+	printf("%" PRIX64 "\n", result);
 
 	fclose(bytecodeFile);
 	return 0;

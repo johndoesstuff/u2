@@ -134,7 +134,7 @@ void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
 		} else {
 			// 64bit load imm
 			emit_rex(jit_memory, 1, 0, dst);
-			emit_byte(jit_memory, 0xB8 | dst);
+			emit_byte(jit_memory, 0xB8 | reg86_base);
 			for (int i = 0; i < 8; i++) emit_byte(jit_memory, (imm >> (i * 8)) & 0xFF);
 		}
 	} else {
