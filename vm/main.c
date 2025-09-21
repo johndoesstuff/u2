@@ -136,19 +136,19 @@ int main(int argc, char** argv) {
 
 		switch (instructionObj.format) {
 			case FORMAT_F:
-				printf(" r%d r%d r%d", rd, rs1, rs2);
+				printf(" r%d r%d r%d", rd + 1, rs1 + 1, rs2 + 1);
 				break;
 			case FORMAT_R:
-				printf(" r%d r%d", rd, rs1);
+				printf(" r%d r%d", rd + 1, rs1 + 1);
 				break;
 			case FORMAT_I:
-				printf(" r%d %" PRIX64, rd, immediate);
+				printf(" r%d %" PRIX64, rd + 1, immediate);
 				break;
 			case FORMAT_J:
 				printf(" %" PRIX64, immediate);
 				break;
 			case FORMAT_D:
-				printf(" r%d", rd);
+				printf(" r%d", rd + 1);
 				break;
 			case FORMAT_NONE:
 				break;
