@@ -16,6 +16,9 @@
 
 /*
 	Encodings!
+
+	Encoding structure defined in x86encoding.h
+	and u2b register mapping defined in x86jit.c
 */
 
 _x86_encoding __mov_r32_imm32 = {

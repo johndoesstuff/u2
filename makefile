@@ -1,5 +1,5 @@
 target:
-	gcc common/instruction.c vm/x86encoding.c vm/x86jit.c vm/main.c -o vm/vm -g
+	gcc common/instruction.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c -o vm/vm -g
 	gcc common/instruction.c assembler/main.c -o assembler/assembler -g
 
 syntax:
