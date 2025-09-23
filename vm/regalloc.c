@@ -80,6 +80,16 @@ _x86_register regalloc_u2a_x86(uint32_t vmreg) {
 	// TODO: actually implement this on the stack
 }
 
+_x86_register getreg_u2a_x86(uint32_t vmreg) {
+	// search for reg
+	_x86_register reg = find_reg(vmreg);
+	if (reg != _x86_SPILL) return reg;
+	// wtf no reg?? check spill
+	// TODO
+	// no spill? 0 init
+	return reg;
+}
+
 void init_reg_spill_stack(uint8_t** jit_memory) {
 	// sub rsp, 16 * 8 (alloc 16 regs of 8 bytes on rsp)
 	emit_byte(jit_memory, 0x48);

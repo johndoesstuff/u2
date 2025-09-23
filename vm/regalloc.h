@@ -4,6 +4,7 @@
 #include "x86encoding.h"
 
 _x86_register regalloc_u2a_x86(uint32_t reg);
+_x86_register getreg_u2a_x86(uint32_t reg);
 
 typedef struct {
 	int vmreg;
