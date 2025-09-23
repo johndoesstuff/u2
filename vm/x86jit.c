@@ -99,6 +99,14 @@ void emit_xor(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
 void emit_not(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
 }
 
+void init_jit(uint8_t** jit_memory) {
+	init_reg_spill_stack(jit_memory);
+}
+
+void free_jit(uint8_t** jit_memory) {
+	free_reg_spill_stack(jit_memory);
+}
+
 void emit_jit(uint8_t** jit_memory,
 		uint32_t opcode,
 		uint32_t rd,

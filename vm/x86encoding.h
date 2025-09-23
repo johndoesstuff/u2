@@ -33,7 +33,7 @@ typedef struct {
 	uint8_t opcode;
 	int opcode_ext;     // -2: reg/rm, -1: none, else modrm /digit
 	int needs_rex_w;
-	uint8_t imm_size;    // number of bytes to append
+	uint8_t imm_size;   // number of bytes to append
 	int reg_in_opcode;  // stupid shit like b8+rd
 } _x86_encoding;
 

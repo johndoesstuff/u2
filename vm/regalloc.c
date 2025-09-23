@@ -27,32 +27,77 @@ _x86_regstate regstate[] = {
 
 static int regcount = sizeof(u2a_regset)/sizeof(_x86_register);
 
-static void _x86_register next_free(uint32_t vmreg) {
-	// search for unused registers
+static _x86_register next_free() {
 	for (int i = 0; i < regcount; i++) {
 		_x86_regstate reg = regstate[i];
 		if (!reg.busy) {
-			reg.busy = 1;
-			reg.dirty = 1;
-			reg.vmreg = vmreg;
-			return;
+			return i;
 		}
 	}
+	return _x86_SPILL;
+}
 
-	// no register is unused, spill oldest register
+static _x86_register eldest_reg() {
 	int longest_lifetime = -1;
 	_x86_register victim = -1;
 	for (int i = 0; i < regcount; i++) {
 		_x86_regstate reg = regstate[i];
 		if (reg.lifetime > longest_lifetime) {
 			victim = i;
+			longest_lifetime = reg.lifetime;
 		}
+	}
+	return victim;
+}
+
+static _x86_register find_reg(int vmreg) {
+	if (vmreg == -1) return -1;
+	for (int i = 0; i < regcount; i++) {
+		_x86_regstate reg = regstate[i];
+		if (reg.vmreg == vmreg) {
+			return i;
+		}
+	}
+	return _x86_SPILL;
+}
+
+static void spill_reg(uint8_t** jit_memory, _x86_register reg) {
+	_x86_regstate state = regstate[reg];
+	if (state.vmreg != -1 && state.dirty) {
+		int vmreg = state.vmreg;
 	}
 }
 
-_x86_register regalloc_u2a_x86(uint32_t reg) {
-	// TODO: write a fucking register allocator
-	return u2a_regmap[reg];
+_x86_register regalloc_u2a_x86(uint32_t vmreg) {
+	// see if register has a home
+	_x86_register reg = find_reg(vmreg);
+	if (reg != -1) return reg;
+	// search for unused registers
+	reg = next_free();
+	if (reg != -1) return reg;
+	// no register is unused, spill oldest register
+	_x86_register victim = eldest_reg();
+	// TODO: actually implement this on the stack
 }
 
-static uint64_t u2a_regspill[16] = {0};
+void init_reg_spill_stack(uint8_t** jit_memory) {
+	// sub rsp, 16 * 8 (alloc 16 regs of 8 bytes on rsp)
+	emit_byte(jit_memory, 0x48);
+	emit_byte(jit_memory, 0x81);
+	emit_byte(jit_memory, 0xec);
+	emit_byte(jit_memory, 0x80);
+	emit_byte(jit_memory, 0x00);
+	emit_byte(jit_memory, 0x00);
+	emit_byte(jit_memory, 0x00);
+}
+
+void free_reg_spill_stack(uint8_t** jit_memory) {
+	// add rsp, 16 * 8 (free 16 regs of 8 bytes on rsp)
+	emit_byte(jit_memory, 0x48);
+	emit_byte(jit_memory, 0x81);
+	emit_byte(jit_memory, 0xc4);
+	emit_byte(jit_memory, 0x80);
+	emit_byte(jit_memory, 0x00);
+	emit_byte(jit_memory, 0x00);
+	emit_byte(jit_memory, 0x00);
+}

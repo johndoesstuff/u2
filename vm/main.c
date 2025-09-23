@@ -82,6 +82,7 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 	uint8_t *jit_base = jit_memory;
+	init_jit(&jit_memory);
 
 	uint32_t instruction;
 	while (nextInstruction(bytecodeFile, &instruction)) {
@@ -163,6 +164,7 @@ int main(int argc, char** argv) {
 	}
 
 	// return from jit
+	free_jit(&jit_memory);
 	emit_x86ret_reg(&jit_memory, 1);
 
 	// dump machine code because god knows im not getting this right my first try
