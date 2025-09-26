@@ -155,6 +155,7 @@ int main(int argc, char** argv) {
 
 		// get op components
 		char** opargs = malloc(sizeof(char*) * (count_delim(line, ' ') + 1));
+		char** opargs_base = opargs;
 		int opargsc = 0;
 		for (char* pch = strtok(line, " "); pch != NULL; pch = strtok(NULL, " ")) {
 			opargs[opargsc++] = pch;
@@ -286,7 +287,10 @@ int main(int argc, char** argv) {
 
 
 		// cleanup
-		free(opargs);
+		free(opargs_base);
 		linec++;
 	}
+	free(line);
+	fclose(asmFile);
+	fclose(bcFile);
 }

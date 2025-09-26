@@ -1,6 +1,6 @@
 target:
-	gcc common/instruction.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c -o vm/vm -g
-	gcc common/instruction.c assembler/main.c -o assembler/assembler -g
+	gcc common/instruction.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c -o vm/vm -g3
+	gcc common/instruction.c assembler/main.c -o assembler/assembler -g3
 
 syntax:
 	mkdir -p ~/.vim/syntax

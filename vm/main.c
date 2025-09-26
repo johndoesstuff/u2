@@ -22,7 +22,14 @@ typedef struct {
 	uint32_t rs1;
 	uint32_t rs2;
 	uint64_t imm;
-} parsedInstruction;
+	Instruction obj;
+} ParsedInstruction;
+
+typedef struct {
+	uint8_t** jit_memory;   // pointer to the advance pointer, main way of interfacing with jit memory
+	uint8_t* jit_base;      // pointer to the beginning of jit memory
+	uint8_t* jit_advance;   // pointer to the current position in jit_memory
+} Context;
 
 uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
@@ -63,58 +70,29 @@ uint32_t getImm(uint32_t inst) {
 	return imm;
 }
 
-int main(int argc, char** argv) {
-	// correct usage check
-	if (argc < 2) {
-		printf("Usage: u2vm bytecode.u2b\n");
-		exit(1);
-	}
-
-	// try to open file
-	char* bytecodePath = argv[1];
-	FILE* bytecodeFile = fopen(bytecodePath, "rb");
-	if (bytecodeFile == NULL) {
-		printf("Could not find file of path %s\n", bytecodePath);
-		exit(1);
-	}
-
-	// prepare memory for jit execution
-	uint8_t *jit_memory = mmap(NULL,     // address
-			4096,             // size
-			PROT_READ | PROT_WRITE | PROT_EXEC,
-			MAP_PRIVATE | MAP_ANONYMOUS,
-			-1,               // fd
-			0);               // offset
-	if (jit_memory == MAP_FAILED) {
-		printf("Could not allocate memory for jit compilation!\n");
-		exit(1);
-	}
-	uint8_t *jit_base = jit_memory;
-	init_jit(&jit_memory);
-
+void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, FILE* fptr) {
+	rewind(fptr); // reset i/o if not already
 	uint32_t instruction;
-	while (nextInstruction(bytecodeFile, &instruction)) {
+	while (nextInstruction(fptr, &instruction)) {
 		printf("Read instruction %u (0x%08X)\n", instruction, instruction);
 
-		parsedInstruction* parsed = malloc(sizeof(parsedInstruction));
+		ParsedInstruction* parsed = malloc(sizeof(ParsedInstruction));
 		uint32_t opcode = getOpcode(instruction);
 		uint32_t rd = getRd(instruction);
 		uint32_t rs1 = getRs1(instruction);
 		uint32_t rs2 = getRs2(instruction);
 		uint64_t immediate = getImm(instruction);
+		Instruction instructionObj = Instructions[opcode];
 
 		parsed->opcode = opcode;
 		parsed->rd = rd;
 		parsed->rs1 = rs1;
 		parsed->rs2 = rs2;
 		parsed->imm = immediate;
-
-		Instruction instructionObj = Instructions[opcode];
+		parsed->obj = instructionObj;
 
 		// print decoded instruction
 		printf("%s", instructionObj.name);
-
-		//printf("DEBUG: rs2 = %d\n", rs2);
 
 		// check for long immediates
 		if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
@@ -131,13 +109,13 @@ int main(int argc, char** argv) {
 			// if rs2 contains 1 or 2 load next rs2 bytes into imm
 			if (rs2 == 1 || rs2 == 2) {
 				uint32_t immExt;
-				int captured = nextInstruction(bytecodeFile, &immExt);
+				int captured = nextInstruction(fptr, &immExt);
 				if (!captured) {
 					printf("Expected immediate extension but instead recieved EOF? Check rs2 value for last inst.\n");
 				}
 				immediate = immExt;
 				if (rs2 == 2) {
-					captured = nextInstruction(bytecodeFile, &immExt);
+					captured = nextInstruction(fptr, &immExt);
 					if (!captured) {
 						printf("Expected immediate extension but instead recieved EOF? Check rs2 value for second to last inst.\n");
 					}
@@ -147,44 +125,87 @@ int main(int argc, char** argv) {
 				printf("Invalid rs2 value\n");
 			}
 		}
+		parsed->imm = immediate;
+		pass_eval(parsed, context);
+		free(parsed);
+	}
+}
 
+void jit_pass(ParsedInstruction* parsed, Context* context) {
+	switch (parsed->obj.format) {
+		case FORMAT_F:
+			printf(" r%d r%d r%d", parsed->rd + 1, parsed->rs1 + 1, parsed->rs2 + 1);
+			break;
+		case FORMAT_R:
+			printf(" r%d r%d", parsed->rd + 1, parsed->rs1 + 1);
+			break;
+		case FORMAT_I:
+			printf(" r%d %" PRIX64, parsed->rd + 1, parsed->imm);
+			break;
+		case FORMAT_J:
+			printf(" %" PRIX64, parsed->imm);
+			break;
+		case FORMAT_D:
+			printf(" r%d", parsed->rd + 1);
+			break;
+		case FORMAT_NONE:
+			break;
+		default:
+			printf(" [unknown]");
+			exit(1);
+			break;
+	}
+	printf("\n");
 
+	emit_jit(context->jit_memory, parsed->opcode, parsed->rd, parsed->rs1, parsed->rs2, parsed->imm);
+}
 
-		switch (instructionObj.format) {
-			case FORMAT_F:
-				printf(" r%d r%d r%d", rd + 1, rs1 + 1, rs2 + 1);
-				break;
-			case FORMAT_R:
-				printf(" r%d r%d", rd + 1, rs1 + 1);
-				break;
-			case FORMAT_I:
-				printf(" r%d %" PRIX64, rd + 1, immediate);
-				break;
-			case FORMAT_J:
-				printf(" %" PRIX64, immediate);
-				break;
-			case FORMAT_D:
-				printf(" r%d", rd + 1);
-				break;
-			case FORMAT_NONE:
-				break;
-			default:
-				printf(" [unknown]");
-				exit(1);
-				break;
-		}
-		printf("\n");
+void free_context(Context* context) {
+	free(context);
+}
 
-		emit_jit(&jit_memory, opcode, rd, rs1, rs2, immediate);
+int main(int argc, char** argv) {
+	// correct usage check
+	if (argc < 2) {
+		printf("Usage: u2vm bytecode.u2b\n");
+		exit(1);
 	}
 
+	// try to open file
+	char* bytecodePath = argv[1];
+	FILE* bytecodeFile = fopen(bytecodePath, "rb");
+	if (bytecodeFile == NULL) {
+		printf("Could not find file of path %s\n", bytecodePath);
+		exit(1);
+	}
+
+	// prepare memory for jit execution
+	uint8_t *jit_base = mmap(NULL,    // address
+			4096,             // size
+			PROT_READ | PROT_WRITE | PROT_EXEC,
+			MAP_PRIVATE | MAP_ANONYMOUS,
+			-1,               // fd
+			0);               // offset
+	if (jit_base == MAP_FAILED) {
+		printf("Could not allocate memory for jit compilation!\n");
+		exit(1);
+	}
+	uint8_t* jit_advance = jit_base;
+	uint8_t** jit_memory = &jit_advance;
+	init_jit(jit_memory);
+	Context* context = malloc(sizeof(Context));
+	context->jit_memory = jit_memory;
+	context->jit_base = jit_base;
+	context->jit_advance = jit_advance;
+	do_pass(jit_pass, context, bytecodeFile);
+
 	// return from jit
-	free_jit(&jit_memory);
-	emit_x86ret_reg(&jit_memory, 1);
+	free_jit(jit_memory);
+	emit_x86ret_reg(jit_memory, 1);
 
 	// dump machine code because god knows im not getting this right my first try
 	// or my second or third or fourth
-	size_t emitted_size = jit_memory - jit_base;
+	size_t emitted_size = *jit_memory - jit_base;
 	printf("===== x86 dump =====\n");
 	for (int i = 0; i < emitted_size; i++) {
 		printf("%02X ", (unsigned char)jit_base[i]);
@@ -198,5 +219,6 @@ int main(int argc, char** argv) {
 	printf("%" PRIX64 "\n", result);
 
 	fclose(bytecodeFile);
+	free_context(context);
 	return 0;
 }
