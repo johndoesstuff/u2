@@ -16,6 +16,14 @@
 	Usage = u2vm bytecode.u2b
 */
 
+typedef struct {
+	uint32_t opcode;
+	uint32_t rd;
+	uint32_t rs1;
+	uint32_t rs2;
+	uint64_t imm;
+} parsedInstruction;
+
 uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
 	if (n != 1) {
@@ -88,11 +96,18 @@ int main(int argc, char** argv) {
 	while (nextInstruction(bytecodeFile, &instruction)) {
 		printf("Read instruction %u (0x%08X)\n", instruction, instruction);
 
+		parsedInstruction* parsed = malloc(sizeof(parsedInstruction));
 		uint32_t opcode = getOpcode(instruction);
 		uint32_t rd = getRd(instruction);
 		uint32_t rs1 = getRs1(instruction);
 		uint32_t rs2 = getRs2(instruction);
 		uint64_t immediate = getImm(instruction);
+
+		parsed->opcode = opcode;
+		parsed->rd = rd;
+		parsed->rs1 = rs1;
+		parsed->rs2 = rs2;
+		parsed->imm = immediate;
 
 		Instruction instructionObj = Instructions[opcode];
 
