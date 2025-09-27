@@ -21,6 +21,7 @@ typedef struct {
 	uint32_t rd;
 	uint32_t rs1;
 	uint32_t rs2;
+	uint32_t imm_ext;
 	uint64_t imm;
 	Instruction obj;
 } ParsedInstruction;
@@ -30,6 +31,12 @@ typedef struct {
 	uint8_t* jit_base;      // pointer to the beginning of jit memory
 	uint8_t* jit_advance;   // pointer to the current position in jit_memory
 } Context;
+
+typedef struct {
+	uint32_t reg;
+	uint32_t start;
+	uint32_t end;
+} RegisterLifetime;
 
 uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
@@ -89,6 +96,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 		parsed->rs1 = rs1;
 		parsed->rs2 = rs2;
 		parsed->imm = immediate;
+		parsed->imm_ext = 0;
 		parsed->obj = instructionObj;
 
 		// print decoded instruction
@@ -108,6 +116,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 
 			// if rs2 contains 1 or 2 load next rs2 bytes into imm
 			if (rs2 == 1 || rs2 == 2) {
+				parsed->imm_ext = 1;
 				uint32_t immExt;
 				int captured = nextInstruction(fptr, &immExt);
 				if (!captured) {
@@ -129,6 +138,10 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 		pass_eval(parsed, context);
 		free(parsed);
 	}
+}
+
+void reg_pass(ParsedInstruction* parsed, Context* context) {
+	
 }
 
 void jit_pass(ParsedInstruction* parsed, Context* context) {
@@ -197,6 +210,7 @@ int main(int argc, char** argv) {
 	context->jit_memory = jit_memory;
 	context->jit_base = jit_base;
 	context->jit_advance = jit_advance;
+	do_pass(reg_pass, context, bytecodeFile);
 	do_pass(jit_pass, context, bytecodeFile);
 
 	// return from jit
