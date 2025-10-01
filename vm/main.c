@@ -29,6 +29,9 @@ typedef struct {
 	uint32_t end;
 } RegisterLifetime;
 
+// global for cfg pass
+ParsedArray* parsed_arr;
+
 uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
 	if (n != 1) {
@@ -72,7 +75,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 	rewind(fptr); // reset i/o if not already
 	uint32_t instruction;
 	while (nextInstruction(fptr, &instruction)) {
-		printf("Read instruction %u (0x%08X)\n", instruction, instruction);
+		//printf("Read instruction %u (0x%08X)\n", instruction, instruction);
 
 		ParsedInstruction* parsed = malloc(sizeof(ParsedInstruction));
 		uint32_t opcode = getOpcode(instruction);
@@ -91,7 +94,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 		parsed->obj = instructionObj;
 
 		// print decoded instruction
-		printf("%s", instructionObj.name);
+		//printf("%s", instructionObj.name);
 
 		// check for long immediates
 		if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
@@ -131,12 +134,29 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 	}
 }
 
+void _DEBUG_print_parsed_instruction(ParsedInstruction* parsed) {
+	printf("ParsedInstruction {\n");
+	printf("\topcode: %u\n", parsed->opcode);
+	printf("\trd: %u\n", parsed->rd);
+	printf("\trs1: %u\n", parsed->rs1);
+	printf("\trs2: %u\n", parsed->rs2);
+	printf("\timm_ext: %u\n", parsed->imm_ext);
+	printf("\timm: %lu\n", parsed->imm);
+	printf("}\n");
+}
+
+void cfg_pass(ParsedInstruction* parsed, Context* context) {
+	push_parsed_array(parsed_arr, parsed);
+	_DEBUG_print_parsed_instruction(parsed);
+}
+
 void reg_pass(ParsedInstruction* parsed, Context* context) {
 	
 }
 
 void jit_pass(ParsedInstruction* parsed, Context* context) {
-	switch (parsed->obj.format) {
+	// debug
+	/*switch (parsed->obj.format) {
 		case FORMAT_F:
 			printf(" r%d r%d r%d", parsed->rd + 1, parsed->rs1 + 1, parsed->rs2 + 1);
 			break;
@@ -159,7 +179,7 @@ void jit_pass(ParsedInstruction* parsed, Context* context) {
 			exit(1);
 			break;
 	}
-	printf("\n");
+	printf("\n");*/
 
 	emit_jit(context->jit_memory, parsed->opcode, parsed->rd, parsed->rs1, parsed->rs2, parsed->imm);
 }
@@ -201,6 +221,11 @@ int main(int argc, char** argv) {
 	context->jit_memory = jit_memory;
 	context->jit_base = jit_base;
 	context->jit_advance = jit_advance;
+
+	// init global for cfg pass
+	parsed_arr = init_parsed_array();
+	do_pass(cfg_pass, context, bytecodeFile);
+
 	do_pass(reg_pass, context, bytecodeFile);
 	do_pass(jit_pass, context, bytecodeFile);
 
