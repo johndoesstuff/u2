@@ -17,16 +17,6 @@
 */
 
 typedef struct {
-	uint32_t opcode;
-	uint32_t rd;
-	uint32_t rs1;
-	uint32_t rs2;
-	uint32_t imm_ext;
-	uint64_t imm;
-	Instruction obj;
-} ParsedInstruction;
-
-typedef struct {
 	uint8_t** jit_memory;   // pointer to the advance pointer, main way of interfacing with jit memory
 	uint8_t* jit_base;      // pointer to the beginning of jit memory
 	uint8_t* jit_advance;   // pointer to the current position in jit_memory

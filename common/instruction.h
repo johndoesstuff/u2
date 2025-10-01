@@ -2,6 +2,8 @@
 	U2 Instruction Set
 */
 
+#include <stdint.h>
+
 enum {
 	FORMAT_F,    // 3 register :                      ins r0 r1 r2
 	FORMAT_M,    // register to register + offset :   ins r0 r1 im
@@ -16,6 +18,16 @@ struct {
 	InstructionFormat format; 
 	char* name;
 } typedef Instruction;
+
+typedef struct {
+	uint32_t opcode;
+	uint32_t rd;
+	uint32_t rs1;
+	uint32_t rs2;
+	uint32_t imm_ext;
+	uint64_t imm;
+	Instruction obj;
+} ParsedInstruction;
 
 enum {
 	U2_MOV,
