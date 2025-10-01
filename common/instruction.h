@@ -2,6 +2,9 @@
 	U2 Instruction Set
 */
 
+#ifndef INSTRUCTION_H
+#define INSTRUCTION_H
+
 #include <stdint.h>
 
 enum {
@@ -54,3 +57,5 @@ enum {
 
 extern Instruction Instructions[];
 extern const int Instruction_Count;
+
+#endif

@@ -6,6 +6,7 @@
 #include "../common/instruction.h"
 
 #include "x86jit.h"
+#include "cfg.h"
 
 /**
 	U2 VIRTUAL MACHINE

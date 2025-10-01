@@ -1,18 +1,5 @@
-#include "../common/instruction.h"
-
-typedef struct {
-	ParsedInstruction** instructions; // atomic instruction unit
-	unsigned int count;               // # instructions
-	unsigned int capacity;
-	unsigned int connection_count;    // 0, 1, 2
-	struct BasicBlock** connections;
-} BasicBlock;
-
-typedef struct {
-	ParsedInstruction** instructions;
-	unsigned int count;
-	unsigned int capactiy;
-} ParsedArray;
+#include "cfg.h"
+#include <stdlib.h>
 
 /*
 	STEP 1: CREATE ARRAY OF PARSED INSTRUCTIONS
