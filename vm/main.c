@@ -118,6 +118,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 				}
 				immediate = immExt;
 				if (rs2 == 2) {
+					parsed->imm_ext = 2;
 					captured = nextInstruction(fptr, &immExt);
 					if (!captured) {
 						printf("Expected immediate extension but instead recieved EOF? Check rs2 value for second to last inst.\n");

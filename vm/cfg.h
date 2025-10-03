@@ -21,4 +21,15 @@ typedef struct {
 ParsedArray* init_parsed_array(void);
 void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
 
+typedef struct {
+	unsigned int target_id;
+	unsigned int source_id;
+} JumpTableEntry;
+
+typedef struct {
+	JumpTableEntry** entries; // store jump table as array for cfg generation
+	unsigned int count;
+	unsigned int capacity;
+} JumpTable;
+
 #endif
