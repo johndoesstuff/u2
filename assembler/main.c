@@ -19,6 +19,7 @@
 	Usage = u2asm asm.u2a bytecode.u2b
  */
 
+// helper function to count the number of delimiters in a string
 int count_delim(char* str, char delim) {
 	int count = 0;
 	for (char* clone = str; *clone != '\0'; clone++) {
@@ -27,6 +28,9 @@ int count_delim(char* str, char delim) {
 	return count;
 }
 
+// each u2 bytecode instruction is 32 bits and is broken into different
+// components for different bit ranges, these functions set those bit ranges to
+// desired values for each parameter. for more information see vm/vm.txt
 void set_bit_range(uint32_t *instruction, int value, int start, int length) {
 	int mask = ((1 << length) - 1) << start;
 	*instruction &= ~mask;
@@ -60,6 +64,9 @@ void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
 	fwrite(&inst, sizeof(uint32_t), 1, fptr);
 }
 
+// expect_register is responsible for returning a uint32_t from a register
+// name. registers can be named r1-r16 but the actual number of a register is
+// only 0-15. as such registers are just stripped of 'r' and decremented
 uint32_t expect_register(char* reg) {
 	if (reg == NULL) {
 		printf("Internal Error: Invalid Register\n");
@@ -80,6 +87,10 @@ uint32_t expect_register(char* reg) {
 	return atoi(reg) - 1;
 }
 
+// expect_immediate handles all possible immediate values, this includes hex,
+// binary, and labels, and will resolve them into a *signed* 64 bit integer
+// (since immediates can be stored up to 64bits and can be negative for
+// relative addressing)
 int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t pc) {
 	if (immediate == NULL) {
 		printf("Internal Error: Invalid Immediate\n");
@@ -127,6 +138,7 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
 	return val;
 }
 
+// get the first index in a char* of a char
 int get_first_char(char* str, char ch) {
 	// return -1 if not found
 	for (int i = 0; i < strlen(str); i++) {
@@ -213,7 +225,8 @@ int main(int argc, char** argv) {
         if (opargs[0][strlen(opargs[0]) - 1] == ':') {
             if (opargsc != 1) {
                 // why would you include something after the label??
-                printf("Adding instructions in the same line as a label isn't currently supported.\n");
+                printf("Adding instructions in the same line as a label isn't"
+                       " currently supported.\n");
                 exit(1);
             }
             if (pass == 1) {
@@ -297,13 +310,21 @@ int main(int argc, char** argv) {
         // later so like does it even matter? the overhead is more than it's
         // worth
 
+        // do we need to extend immediate?
 		int32_t max_14imm = (1LL << 13) - 1;
-		int32_t min_14imm = (1LL << 13);
-		if (imm > max_14imm || imm < min_14imm) {
-            // TODO: finish this
-			// check for 32bit or 64bit extension
-			rs2 = (imm > UINT32_MAX) + 1;
-		}
+		int32_t min_14imm = -(1LL << 13);
+        int imm_size = 0; // 0 = 14b, 1 = 32b, 2 = 64b
+		if (imm <= max_14imm && imm >= min_14imm) {
+            imm_size = 0;
+		} else if (imm <= INT32_MAX && imm >= INT32_MIN) {
+            imm_size = 1;
+        } else {
+            imm_size = 2;
+        }
+        rs2 = imm_size; // imm size is safe to store in rs2 because no
+                        // instruction uses both imm and rs2 that would require
+                        // imm extension, for more info see InstructionFormat
+                        // at common/instruction.h
 		
 		uint32_t instBC = 0;
 		set_op(&instBC, opcode);
@@ -313,7 +334,7 @@ int main(int argc, char** argv) {
 		set_imm(&instBC, imm);
 
 		// check for long immediates
-		if (rs2 && instruction.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
+		if (imm_size) {
 			set_imm(&instBC, 0); // set immediate to 0 for clarity
 			switch (instruction.format) { // check imm extension is supported
 				case FORMAT_J:
@@ -321,18 +342,19 @@ int main(int argc, char** argv) {
 				case FORMAT_M:
 					break;
 				default:
-					printf("If you are seeing this something has gone seriously wrong and it's probably my fault.\n");
+                    printf("If you are seeing this something has gone seriously"
+                           " wrong and it's probably my fault.\n");
 					exit(1);
 			}
-			printf("Instruction: %X (%dbit ext)\n", instBC, 32*rs2);
+			printf("Instruction: %X (%dbit ext)\n", instBC, 32*imm_size);
 			emit_inst(instBC, bcFile, &pc);
-			uint32_t immExt = (uint32_t)imm;
-			printf("Imm extension: %X\n", immExt);
-			emit_inst(immExt, bcFile, &pc);
-			if (rs2 == 2) {
-				immExt = (uint32_t)(imm >> 32);
-				printf("Imm extension: %X\n", immExt);
-				emit_inst(immExt, bcFile, &pc); // 64bit extension
+			uint32_t imm_ext = (uint32_t)imm;
+			printf("Imm extension: %X\n", imm_ext);
+			emit_inst(imm_ext, bcFile, &pc);
+			if (imm_size == 2) {
+				imm_ext = (uint32_t)(imm >> 32);
+				printf("Imm extension: %X\n", imm_ext);
+				emit_inst(imm_ext, bcFile, &pc); // 64bit extension
 			}
 		} else {
 			printf("Instruction: %X\n", instBC);
