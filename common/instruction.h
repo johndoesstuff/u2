@@ -20,6 +20,7 @@ enum {
 struct {
 	InstructionFormat format; 
 	char* name;
+    int is_label;
 } typedef Instruction;
 
 typedef struct {

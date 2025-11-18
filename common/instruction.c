@@ -27,7 +27,7 @@ Instruction Instructions[] = {
 	[U2_CMP] = { FORMAT_R, "cmp" },    // compare registers (TODO: figure out wtf that means and how the hell im going to implement special registers)
 
 	// CONTROL
-	[U2_JMP] = { FORMAT_J, "jmp" },    // jump to imm
+	[U2_JMP] = { FORMAT_J, "jmp" },    // jump to relative imm
 	[U2_JE]  = { FORMAT_J, "je" },     // jump if equal
 	[U2_JNE] = { FORMAT_J, "jne" },    // jump if not equal
 	[U2_JL]  = { FORMAT_J, "jl" },     // jump if less than

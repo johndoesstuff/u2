@@ -17,10 +17,6 @@ typedef struct {
 	unsigned int capacity;
 } ParsedArray;
 
-// parsed array methods
-ParsedArray* init_parsed_array(void);
-void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
-
 typedef struct {
 	unsigned int target_id;
 	unsigned int source_id;
@@ -31,5 +27,10 @@ typedef struct {
 	unsigned int count;
 	unsigned int capacity;
 } JumpTable;
+
+// parsed array methods
+ParsedArray* init_parsed_array(void);
+void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
+JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
 
 #endif

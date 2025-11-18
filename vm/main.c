@@ -226,6 +226,7 @@ int main(int argc, char** argv) {
 	// init global for cfg pass
 	parsed_arr = init_parsed_array();
 	do_pass(cfg_pass, context, bytecodeFile);
+    JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
 
 	do_pass(reg_pass, context, bytecodeFile);
 	do_pass(jit_pass, context, bytecodeFile);
@@ -234,8 +235,8 @@ int main(int argc, char** argv) {
 	free_jit(jit_memory);
 	emit_x86ret_reg(jit_memory, 1);
 
-	// dump machine code because god knows im not getting this right my first try
-	// or my second or third or fourth
+    // dump machine code because god knows im not getting this right my first
+    // try or my second or third or fourth
 	size_t emitted_size = *jit_memory - jit_base;
 	printf("===== x86 dump =====\n");
 	for (int i = 0; i < emitted_size; i++) {

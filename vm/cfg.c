@@ -3,6 +3,12 @@
 #include <stdio.h>
 
 /*
+ * cfg.c
+ *
+ * CONTROL FLOW GRAPH GENERATOR for REGISTER ALLOCATION
+ */
+
+/*
 	STEP 1: CREATE ARRAY OF PARSED INSTRUCTIONS
 */
 
@@ -23,25 +29,23 @@ void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction
 }
 
 /*
-	STEP 2: BREAK PARSED INSTRUCTIONS INTO BASIC BLOCKS
+   STEP 2: BREAK PARSED INSTRUCTIONS INTO BASIC BLOCKS
 
-	To do this we need to figure out first what basic
-	block is, for this context I will assume a basic
-	block is an atomic set of instructions (no inner
-	jumpable labels) that contains a MAXIMUM of one
-	jump instruction as the last statement. To break
-	our instruction array into a set of basic blocks
-	we must first figure out all instructions that are
-	jumpable by creating a jump table. Because forward
-	jumping is allowed this must be done in a 2 pass
-	system.
+   To do this we need to figure out first what basic block is, for this context
+   I will assume a basic block is an atomic set of instructions (no inner
+   jumpable labels) that contains a MAXIMUM of one jump instruction as the last
+   statement. To break our instruction array into a set of basic blocks we must
+   first figure out all instructions that are jumpable by creating a jump
+   table. Because forward jumping is allowed this must be done in a 2 pass
+   system.
 */
 
 int is_jump__(uint32_t opcode) {
 	return opcode == U2_JMP || opcode == U2_JE || opcode == U2_JNE || opcode == U2_JL || opcode == U2_JG;
 }
 
-// signs immediates based on extension for relative jumping (which i have decided i am implementing as of 5 minutes ago)
+// signs immediates based on extension for relative jumping (which i have
+// decided i am implementing as of 5 minutes ago)
 int64_t sign_ext_imm__(uint64_t imm, uint32_t imm_ext) {
 	switch (imm_ext) {
 		case 0: // imm is default of uint14
@@ -56,7 +60,9 @@ int64_t sign_ext_imm__(uint64_t imm, uint32_t imm_ext) {
 	}
 }
 
-// remember, the only goal of this function is just to generate a jump table from the parsed array. this just means we have to match every jump and find where it lands
+// remember, the only goal of this function is just to generate a jump table
+// from the parsed array. this just means we have to match every jump and find
+// where it lands
 JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
 	// initialize
 	JumpTable* jt = malloc(sizeof(JumpTable));

@@ -6,6 +6,7 @@
 #include <ctype.h>    // tolower
 #include <stdint.h>   // uint32_t, uint64_t, ...
 #include <inttypes.h> // PRIX64
+#include "label.h"
 
 #include "error.c"
 
@@ -52,12 +53,10 @@ void set_imm(uint32_t* instruction, uint64_t imm) {
 	set_bit_range(instruction, (int)imm, 0, 14);
 }
 
-void emit_byte(uint8_t byte, FILE* fptr) {
-	//printf("Emit %X\n", byte);
-	fwrite(&byte, sizeof(uint8_t), 1, fptr);
-}
-
-void emit_inst(uint32_t inst, FILE* fptr) {
+void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
+    // important to note is pc is relative to each 32bit segment, it would be
+    // silly to give pc byte-level precision since all instructions are 4bytes
+    (*pc)++;
 	fwrite(&inst, sizeof(uint32_t), 1, fptr);
 }
 
@@ -81,7 +80,7 @@ uint32_t expect_register(char* reg) {
 	return atoi(reg) - 1;
 }
 
-uint64_t expect_immediate(char* immediate) {
+uint64_t expect_immediate(char* immediate, LabelTable* labels, int pass) {
 	if (immediate == NULL) {
 		printf("Internal Error: Invalid Immediate\n");
 		exit(1);
@@ -103,8 +102,16 @@ uint64_t expect_immediate(char* immediate) {
 
 	uint64_t val = strtoull(immediate, &endptr, base);
 	if (*endptr != '\0') {
-		printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
-		exit(1);
+        // wait wait it could be a label.. we should wait for 2nd pass until
+        // making any final decisions
+        if (pass != 2) return 0;
+
+        int fl = find_label(labels, immediate);
+        if (fl < 0) { // we've done all we can.. give up :(
+            printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
+            exit(1);
+        }
+        return (uint64_t)fl;
 	}
 	return val;
 }
@@ -132,6 +139,7 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
+    // try to open output
 	char* bcPath = argv[2];
 	FILE* bcFile = fopen(bcPath, "wb");
 	if (bcFile == NULL) {
@@ -139,10 +147,24 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
+    // initialize
 	char* line = NULL;
 	size_t linec = 0;
 	size_t len;
 	ssize_t read;
+    LabelTable* labels = new_label_table();
+    /*
+     * 2 PASS SYSTEM
+     *
+     * First pass will just inc pc and set label addr for LabelTable* labels
+     * Se/cond pass will use labels from labels to resolve addresses
+     *
+     * This system is necessary to resolve forward declared labels
+     */
+    int pass = 1;
+    uint32_t pc = 0;
+
+    asm_pass:
 	while ((read = getline(&line, &len, asmFile)) != -1) {
 		// remove \n from line
 		line[read - 1] = '\0';
@@ -176,8 +198,24 @@ int main(int argc, char** argv) {
 			}
 		}
 
+        // might be label, not op. check if last character is a ':'
+        if (opargs[0][strlen(opargs[0]) - 1] == ':') {
+            if (opargsc != 1) {
+                // why would you include something after the label??
+                printf("Adding instructions in the same line as a label isn't currently supported.\n");
+                exit(1);
+            }
+            if (pass == 1) {
+                // remove ending ':'
+                char* label_str = strdup(opargs[0]);
+                label_str[strlen(label_str) - 1] = '\0';
+                add_label(labels, label_str, pc);
+            }
+            continue;
+        }
+
 		if (opcode == -1) {
-			printf("Unknown Instruction \"%s\"", opargs[0]);
+			printf("Unknown Instruction \"%s\"\n", opargs[0]);
 			exit(1);
 		}
 
@@ -221,17 +259,17 @@ int main(int argc, char** argv) {
 			case FORMAT_M:
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
-				imm = expect_immediate(opargs[3]);
+				imm = expect_immediate(opargs[3], labels, pass);
 			case FORMAT_R:
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
 				break;
 			case FORMAT_I:
 				rd = expect_register(opargs[1]);
-				imm = expect_immediate(opargs[2]);
+				imm = expect_immediate(opargs[2], labels, pass);
 				break;
 			case FORMAT_J:
-				imm = expect_immediate(opargs[1]);
+				imm = expect_immediate(opargs[1], labels, pass);
 				break;
 			case FORMAT_D:
 				rd = expect_register(opargs[1]);
@@ -243,7 +281,10 @@ int main(int argc, char** argv) {
 				exit(1);
 		}
 
-		// generate bytecode
+        // generate bytecode, technically we dont have to do this if we are in
+        // pass 1 but like.. who cares.. we will just rewind() and overwrite
+        // later so like does it even matter? the overhead is more than it's
+        // worth
 		uint32_t max_imm = (1 << 14) - 1;
 		if (imm > max_imm) {
 			// check for 32bit or 64bit extension
@@ -271,25 +312,33 @@ int main(int argc, char** argv) {
 					exit(1);
 			}
 			printf("Instruction: %X (%dbit ext)\n", instBC, 32*rs2);
-			emit_inst(instBC, bcFile);
+			emit_inst(instBC, bcFile, &pc);
 			uint32_t immExt = (uint32_t)imm;
 			printf("Imm extension: %X\n", immExt);
-			emit_inst(immExt, bcFile);
+			emit_inst(immExt, bcFile, &pc);
 			if (rs2 == 2) {
 				immExt = (uint32_t)(imm >> 32);
 				printf("Imm extension: %X\n", immExt);
-				emit_inst(immExt, bcFile); // 64bit extension
+				emit_inst(immExt, bcFile, &pc); // 64bit extension
 			}
 		} else {
 			printf("Instruction: %X\n", instBC);
-			emit_inst(instBC, bcFile);
+			emit_inst(instBC, bcFile, &pc);
 		}
-
 
 		// cleanup
 		free(opargs_base);
 		linec++;
 	}
+
+    // second pass
+    if (pass < 2) {
+        rewind(asmFile);
+        rewind(bcFile);
+        pass++;
+        goto asm_pass;
+    }
+
 	free(line);
 	fclose(asmFile);
 	fclose(bcFile);
