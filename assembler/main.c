@@ -6,7 +6,7 @@
 #include <ctype.h>    // tolower
 #include <stdint.h>   // uint32_t, uint64_t, ...
 #include <inttypes.h> // PRIX64
-#include "label.h"
+#include "label.h"    // LabelTable for resolving label addresses
 
 #include "error.c"
 
@@ -80,7 +80,7 @@ uint32_t expect_register(char* reg) {
 	return atoi(reg) - 1;
 }
 
-uint64_t expect_immediate(char* immediate, LabelTable* labels, int pass) {
+int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t pc) {
 	if (immediate == NULL) {
 		printf("Internal Error: Invalid Immediate\n");
 		exit(1);
@@ -108,10 +108,21 @@ uint64_t expect_immediate(char* immediate, LabelTable* labels, int pass) {
 
         int fl = find_label(labels, immediate);
         if (fl < 0) { // we've done all we can.. give up :(
-            printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
+            printf("Invalid Immediate, unexpected character '%c' in %s\n",
+                    *endptr, immediate);
             exit(1);
         }
-        return (uint64_t)fl;
+        // reformat label pc to be relative to current position (all labels are
+        // relative addressing) the issue with this is negative immediates
+        // arent supported so we need to make our 14 bit imms signed for jumps
+        // and whatnot
+        int64_t rel = (int64_t)fl - (int64_t)pc;
+        return (uint64_t)rel; // since this is technically a signed cast to
+                              // unsigned this needs to be resolved later
+                              // during bytecode emission!  immediates should
+                              // be handled as signed values for their relative
+                              // size (14bit signed, 32bit signed and 64bit
+                              // signed respectively)
 	}
 	return val;
 }
@@ -248,7 +259,7 @@ int main(int argc, char** argv) {
 		uint32_t rd  = 0;
 		uint32_t rs1 = 0;
 		uint32_t rs2 = 0;
-		uint64_t imm = 0;
+		int64_t  imm = 0;
 
 		switch (instruction.format) {
 			case FORMAT_F:
@@ -259,17 +270,17 @@ int main(int argc, char** argv) {
 			case FORMAT_M:
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
-				imm = expect_immediate(opargs[3], labels, pass);
+				imm = expect_immediate(opargs[3], labels, pass, pc);
 			case FORMAT_R:
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
 				break;
 			case FORMAT_I:
 				rd = expect_register(opargs[1]);
-				imm = expect_immediate(opargs[2], labels, pass);
+				imm = expect_immediate(opargs[2], labels, pass, pc);
 				break;
 			case FORMAT_J:
-				imm = expect_immediate(opargs[1], labels, pass);
+				imm = expect_immediate(opargs[1], labels, pass, pc);
 				break;
 			case FORMAT_D:
 				rd = expect_register(opargs[1]);
@@ -285,12 +296,14 @@ int main(int argc, char** argv) {
         // pass 1 but like.. who cares.. we will just rewind() and overwrite
         // later so like does it even matter? the overhead is more than it's
         // worth
-		uint32_t max_imm = (1 << 14) - 1;
-		if (imm > max_imm) {
+
+		int32_t max_14imm = (1LL << 13) - 1;
+		int32_t min_14imm = (1LL << 13);
+		if (imm > max_14imm || imm < min_14imm) {
+            // TODO: finish this
 			// check for 32bit or 64bit extension
 			rs2 = (imm > UINT32_MAX) + 1;
 		}
-		//printf("DEBUG: imm = %" PRIX64 "\n", imm);
 		
 		uint32_t instBC = 0;
 		set_op(&instBC, opcode);
