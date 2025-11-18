@@ -18,7 +18,8 @@
 */
 
 typedef struct {
-	uint8_t** jit_memory;   // pointer to the advance pointer, main way of interfacing with jit memory
+    uint8_t** jit_memory;   // pointer to the advance pointer, main way of
+                            // interfacing with jit memory
 	uint8_t* jit_base;      // pointer to the beginning of jit memory
 	uint8_t* jit_advance;   // pointer to the current position in jit_memory
 } Context;
@@ -32,7 +33,7 @@ typedef struct {
 // global for cfg pass
 ParsedArray* parsed_arr;
 
-uint32_t nextInstruction(FILE* f, uint32_t* inst) {
+uint32_t next_instruction(FILE* f, uint32_t* inst) {
 	size_t n = fread(inst, sizeof(uint32_t), 1, f);
 	if (n != 1) {
 		if (feof(f)) {
@@ -45,23 +46,23 @@ uint32_t nextInstruction(FILE* f, uint32_t* inst) {
 	return 1;
 }
 
-uint32_t getOpcode(uint32_t inst) {
+uint32_t get_opcode(uint32_t inst) {
 	return inst >> (32 - OPCODE_BITS);
 }
 
-uint32_t getRd(uint32_t inst) {
+uint32_t get_rd(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-uint32_t getRs1(uint32_t inst) {
+uint32_t get_rs1(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - 2*REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-uint32_t getRs2(uint32_t inst) {
+uint32_t get_rs2(uint32_t inst) {
 	return (inst >> (32 - OPCODE_BITS - 3*REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
-uint32_t getImm(uint32_t inst) {
+int64_t get_imm(uint32_t inst) {
 	uint32_t mask = (1u << IMM_BITS) - 1;
 	int imm = inst & mask;
 	// sign extend
@@ -74,15 +75,13 @@ uint32_t getImm(uint32_t inst) {
 void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, FILE* fptr) {
 	rewind(fptr); // reset i/o if not already
 	uint32_t instruction;
-	while (nextInstruction(fptr, &instruction)) {
-		//printf("Read instruction %u (0x%08X)\n", instruction, instruction);
-
+	while (next_instruction(fptr, &instruction)) {
 		ParsedInstruction* parsed = malloc(sizeof(ParsedInstruction));
-		uint32_t opcode = getOpcode(instruction);
-		uint32_t rd = getRd(instruction);
-		uint32_t rs1 = getRs1(instruction);
-		uint32_t rs2 = getRs2(instruction);
-		uint64_t immediate = getImm(instruction);
+		uint32_t opcode = get_opcode(instruction);
+		uint32_t rd = get_rd(instruction);
+		uint32_t rs1 = get_rs1(instruction);
+		uint32_t rs2 = get_rs2(instruction);
+		int64_t immediate = get_imm(instruction);
 		Instruction instructionObj = Instructions[opcode];
 
 		parsed->opcode = opcode;
@@ -93,37 +92,40 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 		parsed->imm_ext = 0;
 		parsed->obj = instructionObj;
 
-		// print decoded instruction
-		//printf("%s", instructionObj.name);
-
 		// check for long immediates
-		if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when one shouldn't be expected
+        if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when
+                                                        // one shouldn't be
+                                                        // expected
 			switch (instructionObj.format) { // check imm extension is supported
 				case FORMAT_J:
 				case FORMAT_I:
 				case FORMAT_M:
 					break;
 				default:
-					printf("Immediate extension is not supported for instructions of type %s", instructionObj.name);
+                    printf("Immediate extension is not supported for"
+                           " instructions of type %s", instructionObj.name);
 					exit(1);
 			}
 
 			// if rs2 contains 1 or 2 load next rs2 bytes into imm
 			if (rs2 == 1 || rs2 == 2) {
 				parsed->imm_ext = 1;
-				uint32_t immExt;
-				int captured = nextInstruction(fptr, &immExt);
+				uint32_t imm_ext;
+				int captured = next_instruction(fptr, &imm_ext);
 				if (!captured) {
-					printf("Expected immediate extension but instead recieved EOF? Check rs2 value for last inst.\n");
+                    printf("Expected immediate extension but instead recieved"
+                           " EOF? Check rs2 value for last inst.\n");
 				}
-				immediate = immExt;
+				immediate = imm_ext;
 				if (rs2 == 2) {
 					parsed->imm_ext = 2;
-					captured = nextInstruction(fptr, &immExt);
+					captured = next_instruction(fptr, &imm_ext);
 					if (!captured) {
-						printf("Expected immediate extension but instead recieved EOF? Check rs2 value for second to last inst.\n");
+                        printf("Expected immediate extension but instead"
+                               " recieved EOF? Check rs2 value for second to"
+                               " last inst.\n");
 					}
-					immediate |= (uint64_t)immExt << 32;
+					immediate |= (int64_t)imm_ext << 32;
 				}
 			} else {
 				printf("Invalid rs2 value\n");
@@ -142,7 +144,7 @@ void _DEBUG_print_parsed_instruction(ParsedInstruction* parsed) {
 	printf("\trs1: %u\n", parsed->rs1);
 	printf("\trs2: %u\n", parsed->rs2);
 	printf("\timm_ext: %u\n", parsed->imm_ext);
-	printf("\timm: %lu\n", parsed->imm);
+	printf("\timm: %ld (%lX)\n", parsed->imm, parsed->imm);
 	printf("}\n");
 }
 

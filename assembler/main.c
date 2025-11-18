@@ -107,22 +107,26 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
 		printf("Internal Error: Invalid Immediate\n");
 		exit(1);
 	}
+
+    int is_neg = *immediate == '-';
+    char* immediate_num = immediate;
+    if (is_neg) immediate_num++;
 	
 	char* endptr;
 	int base = 10;
 
 	// lets cover all our bases! heh..
-	if (strlen(immediate) > 2 && immediate[0] == '0') {
-		if (immediate[1] == 'x' || immediate[1] == 'X') {
+	if (strlen(immediate_num) > 2 && immediate_num[0] == '0') {
+		if (immediate_num[1] == 'x' || immediate_num[1] == 'X') {
 			base = 16;
-			immediate += 2; // skip 0x
-		} else if (immediate[1] == 'b' || immediate[1] == 'B') {
+			immediate_num += 2; // skip 0x
+		} else if (immediate_num[1] == 'b' || immediate_num[1] == 'B') {
 			base = 2;
-			immediate += 2; // skip 0b
+			immediate_num += 2; // skip 0b
 		}
 	}
 
-	int64_t val = strtoull(immediate, &endptr, base);
+	int64_t val = strtoll(immediate_num, &endptr, base);
 	if (*endptr != '\0') {
         // wait wait it could be a label.. we should wait for 2nd pass until
         // making any final decisions
@@ -146,7 +150,8 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
                               // size (14bit signed, 32bit signed and 64bit
                               // signed respectively)
 	}
-	return val;
+
+	return is_neg ? -val : val;
 }
 
 // get the first index in a char* of a char

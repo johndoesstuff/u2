@@ -1,0 +1,10 @@
+li r1 0x6EEFCAFE           ; can we store 32bit? a: yes
+li r1 0xBEEFCAFE           ; can we store 32bit? a: no
+li r2 0xFACEBEEFCAFEFED    ; can we store 64bit?
+li r2 0xFACEBEEFCAFEFEED   ; unsigned 64bit should error!
+li r3 10                   ; 14bit
+li r4 0                    ; 0 test
+li r5 -10                  ; 14bit signed?
+li r6 -0x6EEFFACE          ; 32bit signed?
+li r6 -0xBEEFFACE          ; 64bit signed?
+li r7 -0xBEEFFACEDEADED    ; bit 64bit signed?
