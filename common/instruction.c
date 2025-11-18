@@ -24,7 +24,9 @@ Instruction Instructions[] = {
 	[U2_SHR] = { FORMAT_I, "shr" },    // shift rd right by imm
 
 	// COMPARISON
-	[U2_CMP] = { FORMAT_R, "cmp" },    // compare registers (TODO: figure out wtf that means and how the hell im going to implement special registers)
+    [U2_CMP] = { FORMAT_R, "cmp" },    // compare registers (TODO: figure out
+                                       // wtf that means and how the hell im
+                                       // going to implement special registers)
 
 	// CONTROL
 	[U2_JMP] = { FORMAT_J, "jmp" },    // jump to relative imm

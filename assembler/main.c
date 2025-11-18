@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>   // ftruncate
 #include <ctype.h>    // tolower
 #include <stdint.h>   // uint32_t, uint64_t, ...
 #include <inttypes.h> // PRIX64
@@ -19,13 +20,15 @@
 	Usage = u2asm asm.u2a bytecode.u2b
  */
 
-// helper function to count the number of delimiters in a string
-int count_delim(char* str, char delim) {
-	int count = 0;
-	for (char* clone = str; *clone != '\0'; clone++) {
-		if (*clone == delim) count++;
-	}
-	return count;
+// helper function to count the number of args in a line
+int count_args(char* line) {
+    int count = 0;
+    for (char* clone = line; *clone != '\0'; clone++) {
+        while (isspace(*clone)) clone++;
+        if (*clone == ';') return count;
+        count++;
+    }
+    return count;
 }
 
 // each u2 bytecode instruction is 32 bits and is broken into different
@@ -68,23 +71,31 @@ void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
 // name. registers can be named r1-r16 but the actual number of a register is
 // only 0-15. as such registers are just stripped of 'r' and decremented
 uint32_t expect_register(char* reg) {
+    char* regc = reg;
 	if (reg == NULL) {
 		printf("Internal Error: Invalid Register\n");
 		exit(1);
 	}
-	if (tolower(*reg) != 'r') {
-		printf("Invalid Register, expected [r1-r16]\n");
+	if (tolower(*regc) != 'r') {
+		printf("Invalid Register '%s', expected [r1-r16]\n", reg);
 		exit(1);
 	}
-	reg++;
-	int ret = atoi(reg);
+	regc++;
+
+    char* endptr;
+	int64_t ret = strtoull(regc, &endptr, 10);
+    if (*endptr != '\0') {
+        printf("Invalid Register, unexpected character '%c' in %s\n",
+                *endptr, reg);
+        exit(1);
+    }
 	
 	// atoi fail or invalid reg range
 	if (ret > 16 || ret <= 0) {
-		printf("Invalid Register, expected [r1-r16]\n");
+		printf("Invalid Register '%s', expected [r1-r16]\n", reg);
 		exit(1);
 	}
-	return atoi(reg) - 1;
+	return (uint32_t)ret;
 }
 
 // expect_immediate handles all possible immediate values, this includes hex,
@@ -111,7 +122,7 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
 		}
 	}
 
-	uint64_t val = strtoull(immediate, &endptr, base);
+	int64_t val = strtoull(immediate, &endptr, base);
 	if (*endptr != '\0') {
         // wait wait it could be a label.. we should wait for 2nd pass until
         // making any final decisions
@@ -128,7 +139,7 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
         // arent supported so we need to make our 14 bit imms signed for jumps
         // and whatnot
         int64_t rel = (int64_t)fl - (int64_t)pc;
-        return (uint64_t)rel; // since this is technically a signed cast to
+        return rel; // since this is technically a signed cast to
                               // unsigned this needs to be resolved later
                               // during bytecode emission!  immediates should
                               // be handled as signed values for their relative
@@ -199,27 +210,28 @@ int main(int argc, char** argv) {
 		}
 
 		// get op components
-		char** opargs = malloc(sizeof(char*) * (count_delim(line, ' ') + 1));
+		char** opargs = malloc(sizeof(char*) * (count_args(line) + 1));
 		char** opargs_base = opargs;
 		int opargsc = 0;
-		for (char* pch = strtok(line, " "); pch != NULL; pch = strtok(NULL, " ")) {
-			opargs[opargsc++] = pch;
-			printf("Found arg: %s\n", pch);
-		}
+        char* pch = line;
+
+        // ignore whitespace and tokenize arguments
+        while (*pch) {
+            while (isspace(*pch)) pch++;
+            if (*pch == '\0') break;
+            opargs[opargsc++] = pch;
+
+            while (*pch && !isspace(*pch)) pch++;
+
+            if (*pch) {
+                *pch = '\0';
+                pch++;
+            }
+            printf("Found arg: %s\n", opargs[opargsc - 1]);
+        }
 
 		// if line is empty ignore
 		if (opargsc == 0) continue;
-
-		// search for op
-		int opcode = -1;
-		for (int i = 0; i < Instruction_Count; i++) {
-			// convert to lower (ops arent case sensitive)
-			for (char* t = opargs[0]; *t; ++t) *t = tolower(*t);
-			if (strcmp(Instructions[i].name, opargs[0]) == 0) {
-				opcode = i;
-				break;
-			}
-		}
 
         // might be label, not op. check if last character is a ':'
         if (opargs[0][strlen(opargs[0]) - 1] == ':') {
@@ -234,9 +246,21 @@ int main(int argc, char** argv) {
                 char* label_str = strdup(opargs[0]);
                 label_str[strlen(label_str) - 1] = '\0';
                 add_label(labels, label_str, pc);
+                printf("Added label %s\n", label_str);
             }
             continue;
         }
+
+		// search for op
+		int opcode = -1;
+		for (int i = 0; i < Instruction_Count; i++) {
+			// convert to lower (ops arent case sensitive)
+			for (char* t = opargs[0]; *t; ++t) *t = tolower(*t);
+			if (strcmp(Instructions[i].name, opargs[0]) == 0) {
+				opcode = i;
+				break;
+			}
+		}
 
 		if (opcode == -1) {
 			printf("Unknown Instruction \"%s\"\n", opargs[0]);
@@ -284,6 +308,7 @@ int main(int argc, char** argv) {
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
 				imm = expect_immediate(opargs[3], labels, pass, pc);
+                break;
 			case FORMAT_R:
 				rd = expect_register(opargs[1]);
 				rs1 = expect_register(opargs[2]);
@@ -325,17 +350,19 @@ int main(int argc, char** argv) {
                         // instruction uses both imm and rs2 that would require
                         // imm extension, for more info see InstructionFormat
                         // at common/instruction.h
-		
+
 		uint32_t instBC = 0;
 		set_op(&instBC, opcode);
 		set_rd(&instBC, rd);
 		set_rs1(&instBC, rs1);
 		set_rs2(&instBC, rs2);
-		set_imm(&instBC, imm);
+		set_imm(&instBC, imm & 0x3FFF);
 
 		// check for long immediates
 		if (imm_size) {
-			set_imm(&instBC, 0); // set immediate to 0 for clarity
+            set_imm(&instBC, 0); // set immediate to 0 for clarity (extended
+                                 // imm means imm will not be read from this
+                                 // instruction)
 			switch (instruction.format) { // check imm extension is supported
 				case FORMAT_J:
 				case FORMAT_I:
@@ -348,13 +375,13 @@ int main(int argc, char** argv) {
 			}
 			printf("Instruction: %X (%dbit ext)\n", instBC, 32*imm_size);
 			emit_inst(instBC, bcFile, &pc);
-			uint32_t imm_ext = (uint32_t)imm;
+			int32_t imm_ext = (int32_t)(imm & 0xFFFFFFFF);
 			printf("Imm extension: %X\n", imm_ext);
-			emit_inst(imm_ext, bcFile, &pc);
+			emit_inst((uint32_t)imm_ext, bcFile, &pc);
 			if (imm_size == 2) {
-				imm_ext = (uint32_t)(imm >> 32);
+				imm_ext = (int32_t)((imm >> 32) & 0xFFFFFFFF);
 				printf("Imm extension: %X\n", imm_ext);
-				emit_inst(imm_ext, bcFile, &pc); // 64bit extension
+				emit_inst((uint32_t)imm_ext, bcFile, &pc); // 64bit extension
 			}
 		} else {
 			printf("Instruction: %X\n", instBC);
@@ -370,6 +397,7 @@ int main(int argc, char** argv) {
     if (pass < 2) {
         rewind(asmFile);
         rewind(bcFile);
+        ftruncate(fileno(bcFile), 0); // just to make sure we dont somehow write extra bytes
         pass++;
         goto asm_pass;
     }

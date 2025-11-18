@@ -1,6 +1,57 @@
-li r1 10
-li r2 200
+; ================================
+; TEST PROGRAM FOR CFG GENERATION
+; Exercises:
+; - branches
+; - forward jumps
+; - backward jumps (loops)
+; - loads stores
+; - arithmetic compare
+; - nested condition inside a loop
+; ================================
 
-label:
-add r3 r1 r2
-jmp label
+; initialize values
+li   r1 10           ; counter = 10
+li   r2 0            ; sum = 0
+li   r4 1            ; constant = 1
+li   r5 5            ; threshold = 5
+
+; --------------------------------
+; entry block
+; --------------------------------
+
+start_loop:
+cmp  r1 r4           ; compare counter with 1
+jl   end_loop         ; if counter < 1 : exit loop
+
+; --------------------------------
+; inside loop: accumulate sum
+; --------------------------------
+
+add  r2 r2 r1       ; sum += counter
+
+; nested condition: if counter > 5 do special op
+cmp  r1 r5
+jg   special_case
+
+; normal path:
+jmp  continue_loop    ; skip special block
+
+; --------------------------------
+special_case:
+sub  r2 r2 r4       ; sum -= 1   (punish large counters)
+; fallthrough to continue_loop
+
+; --------------------------------
+continue_loop:
+sub  r1 r1 r4       ; counter -= 1
+jmp  start_loop       ; back edge loop continues
+
+; --------------------------------
+end_loop:
+; store result
+st   r2 r3 42       ; store sum to memory r0 + 42
+
+; some trailing code to force another block
+li   r6 123
+mov  r6 r7
+
