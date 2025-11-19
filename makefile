@@ -1,3 +1,4 @@
+
 CC       = gcc
 CFLAGS   = -g3 -Wall -Wextra
 
@@ -16,8 +17,12 @@ all: $(VM_BIN) $(ASM_BIN)
 $(VM_BIN): $(COMMON) $(VM_SRC)
 	$(CC) $(CFLAGS) $(COMMON) $(VM_SRC) -o $(VM_BIN)
 
-$(A_BIN): $(COMMON) $(A_SRC)
+$(ASM_BIN): $(COMMON) $(ASM_SRC)
 	$(CC) $(CFLAGS) $(COMMON) $(ASM_SRC) -o $(ASM_BIN)
+
+clean:
+	rm $(VM_BIN)
+	rm $(ASM_BIN)
 
 syntax:
 	mkdir -p ~/.vim/syntax
@@ -25,6 +30,7 @@ syntax:
 	mkdir -p ~/.vim/ftdetect
 	echo "au BufRead,BufNewFile *.u2a set filetype=u2a" > ~/.vim/ftdetect/u2a.vim
 
+.PHONY: test
 test: $(TEST_OUTPUTS)
 	@for b in $(TEST_OUTPUTS); do \
 		echo "--- Running $$b ---"; \
