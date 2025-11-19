@@ -9,5 +9,5 @@ syntax:
 	echo "au BufRead,BufNewFile *.u2a set filetype=u2a" > ~/.vim/ftdetect/u2a.vim
 
 test:
-	./assembler/assembler assembler/cfgtest.u2a assembler/bytecode.u2b
+	./assembler/assembler tests/imm.u2a tests/bytecode.u2b
 	./vm/vm assembler/bytecode.u2b

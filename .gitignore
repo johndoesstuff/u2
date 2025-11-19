@@ -1,4 +1,5 @@
 # ignore vim
 *.swp
 *.swo
+*.u2b
 assembler/assembler

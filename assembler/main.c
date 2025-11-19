@@ -11,6 +11,10 @@
 
 #include "error.c"
 
+#include <errno.h>
+
+extern int errno;
+
 /**
 	U2 ASSEMBLER
 
@@ -127,6 +131,11 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
 	}
 
 	int64_t val = strtoll(immediate_num, &endptr, base);
+    if (errno == ERANGE) {
+        perror("Immediate out of range");
+        exit(1);
+    }
+
 	if (*endptr != '\0') {
         // wait wait it could be a label.. we should wait for 2nd pass until
         // making any final decisions
