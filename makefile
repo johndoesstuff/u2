@@ -1,6 +1,23 @@
-target:
-	gcc common/instruction.c vm/cfg.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c -o vm/vm -g3
-	gcc common/instruction.c assembler/main.c -o assembler/assembler -g3
+CC       = gcc
+CFLAGS   = -g3 -Wall -Wextra
+
+COMMON   = common/instruction.c
+VM_SRC   = vm/cfg.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c
+ASM_SRC  = assembler/main.c
+
+VM_BIN   = vm/vm
+ASM_BIN  = assembler/assembler
+
+TEST_SOURCES := $(wildcard tests/*.u2a)
+TEST_OUTPUTS := $(TEST_SOURCES:.u2a=.u2b)
+
+all: $(VM_BIN) $(ASM_BIN)
+
+$(VM_BIN): $(COMMON) $(VM_SRC)
+	$(CC) $(CFLAGS) $(COMMON) $(VM_SRC) -o $(VM_BIN)
+
+$(A_BIN): $(COMMON) $(A_SRC)
+	$(CC) $(CFLAGS) $(COMMON) $(ASM_SRC) -o $(ASM_BIN)
 
 syntax:
 	mkdir -p ~/.vim/syntax
@@ -8,6 +25,11 @@ syntax:
 	mkdir -p ~/.vim/ftdetect
 	echo "au BufRead,BufNewFile *.u2a set filetype=u2a" > ~/.vim/ftdetect/u2a.vim
 
-test:
-	./assembler/assembler tests/imm.u2a tests/bytecode.u2b
-	./vm/vm assembler/bytecode.u2b
+test: $(TEST_OUTPUTS)
+	@for b in $(TEST_OUTPUTS); do \
+		echo "--- Running $$b ---"; \
+		$(VM_BIN) $$b; \
+	done
+
+tests/%.u2b: tests/%.u2a assembler/assembler
+	$(ASM_BIN) $< $@

@@ -39,3 +39,8 @@ Instruction Instructions[] = {
 };
 
 const int Instruction_Count = sizeof(Instructions)/sizeof(Instructions[0]);
+
+char* instruction_from_id(int id) {
+    if (id >= Instruction_Count) return "Unknown";
+    else return Instructions[id].name;
+}

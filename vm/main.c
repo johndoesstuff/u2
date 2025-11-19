@@ -150,11 +150,8 @@ void _DEBUG_print_parsed_instruction(ParsedInstruction* parsed) {
 
 void cfg_pass(ParsedInstruction* parsed, Context* context) {
 	push_parsed_array(parsed_arr, parsed);
-	_DEBUG_print_parsed_instruction(parsed);
-}
-
-void reg_pass(ParsedInstruction* parsed, Context* context) {
-	
+	//_DEBUG_print_parsed_instruction(parsed);
+    (void)context;
 }
 
 void jit_pass(ParsedInstruction* parsed, Context* context) {
@@ -229,8 +226,8 @@ int main(int argc, char** argv) {
 	parsed_arr = init_parsed_array();
 	do_pass(cfg_pass, context, bytecodeFile);
     JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
+    (void)jt; // avoid -Wextra
 
-	do_pass(reg_pass, context, bytecodeFile);
 	do_pass(jit_pass, context, bytecodeFile);
 
 	// return from jit
@@ -241,7 +238,7 @@ int main(int argc, char** argv) {
     // try or my second or third or fourth
 	size_t emitted_size = *jit_memory - jit_base;
 	printf("===== x86 dump =====\n");
-	for (int i = 0; i < emitted_size; i++) {
+	for (size_t i = 0; i < emitted_size; i++) {
 		printf("%02X ", (unsigned char)jit_base[i]);
 	}
 	printf("\n\n");

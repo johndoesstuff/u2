@@ -69,7 +69,7 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
 	jt->count = 0;
 	jt->capacity = 16;
 	jt->entries = malloc(sizeof(JumpTableEntry) * jt->capacity);
-	for (int i = 0; i < parsed_array->count; i++) {
+	for (unsigned int i = 0; i < parsed_array->count; i++) {
 		uint32_t op = parsed_array->instructions[i]->opcode;
 		if (is_jump__(op)) {
 			uint64_t imm = parsed_array->instructions[i]->imm;

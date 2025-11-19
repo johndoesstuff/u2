@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-enum {
+typedef enum {
 	FORMAT_F,    // 3 register :                      ins r0 r1 r2
 	FORMAT_M,    // register to register + offset :   ins r0 r1 im
 	FORMAT_R,    // register to register :            ins r0 r1
@@ -15,13 +15,12 @@ enum {
 	FORMAT_J,    // immediate opcode :                ins im
 	FORMAT_D,    // register opcode :                 ins r0
 	FORMAT_NONE, // opcode :                          ins
-} typedef InstructionFormat;
+} InstructionFormat;
 
-struct {
+typedef struct {
 	InstructionFormat format; 
 	char* name;
-    int is_label;
-} typedef Instruction;
+} Instruction;
 
 typedef struct {
 	uint32_t opcode;
@@ -33,7 +32,7 @@ typedef struct {
 	Instruction obj;
 } ParsedInstruction;
 
-enum {
+typedef enum {
 	U2_MOV,
 	U2_LI,
 	U2_LD,
@@ -54,9 +53,10 @@ enum {
 	U2_JNE,
 	U2_JL,
 	U2_JG,
-} typedef Opcode;
+} Opcode;
 
 extern Instruction Instructions[];
 extern const int Instruction_Count;
+char* instruction_from_id(int id);
 
 #endif
