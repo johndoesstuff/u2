@@ -9,8 +9,8 @@
  */
 
 /*
-    STEP 1: CREATE ARRAY OF PARSED INSTRUCTIONS
-*/
+ * STEP 1: CREATE ARRAY OF PARSED INSTRUCTIONS
+ */
 
 ParsedArray* init_parsed_array() {
     ParsedArray* parsed_array = malloc(sizeof(ParsedArray));
@@ -32,16 +32,16 @@ void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction
 }
 
 /*
-   STEP 2: BREAK PARSED INSTRUCTIONS INTO BASIC BLOCKS
+ * STEP 2: BREAK PARSED INSTRUCTIONS INTO BASIC BLOCKS
 
-   To do this we need to figure out first what basic block is, for this context
-   I will assume a basic block is an atomic set of instructions (no inner
-   jumpable labels) that contains a MAXIMUM of one jump instruction as the last
-   statement. To break our instruction array into a set of basic blocks we must
-   first figure out all instructions that are jumpable by creating a jump
-   table. Because forward jumping is allowed this must be done in a 2 pass
-   system.
-*/
+ * To do this we need to figure out first what basic block is, for this context
+ * I will assume a basic block is an atomic set of instructions (no inner
+ * jumpable labels) that contains a MAXIMUM of one jump instruction as the last
+ * statement. To break our instruction array into a set of basic blocks we must
+ * first figure out all instructions that are jumpable by creating a jump
+ * table. Because forward jumping is allowed this must be done in a 2 pass
+ * system.
+ */
 
 int is_jump__(uint32_t opcode) {
     return opcode == U2_JMP || opcode == U2_JE || opcode == U2_JNE || opcode == U2_JL || opcode == U2_JG;
@@ -127,6 +127,15 @@ void add_leader(LeaderSet* ls, uint64_t pc) {
     }
 }
 
+// needed for qsort
+int cmp_uint64(const void* a, const void* b) {
+    uint64_t x = *(const uint64_t*)a;
+    uint64_t y = *(const uint64_t*)b;
+    if (x < y) return -1;
+    if (x > y) return 1;
+    return 0;
+}
+
 LeaderSet* generate_leaders(ParsedArray* pa, JumpTable* jt) {
     LeaderSet* ls = malloc(sizeof(LeaderSet));
     ls->capacity = 16;
@@ -145,5 +154,71 @@ LeaderSet* generate_leaders(ParsedArray* pa, JumpTable* jt) {
                                                 // not at last line
     }
 
+    // dont forget to sort!
+    qsort(ls->leaders, ls->count, sizeof(uint64_t), cmp_uint64);
+
     return ls;
+}
+
+/*
+ * STEP 4: BASIC BLOCKS
+ *
+ * Awesome so we have the leaders, each leader builds a basic block by spanning
+ * the instructions until the index of the next leader is reached. Each basic
+ * block also needs to connect to the other basic blocks it's capable of
+ * reaching either by jump table or by falling through. For register allocation
+ * specifically it's also useful to keep track of incoming connections (we will
+ * need to analyze the flow of registers through each block later to solve an
+ * elaborate graph coloring problem! oh boy!)
+ */
+
+void add_cfg(CFG* cfg, BasicBlock* bb) {
+    cfg->nodes[cfg->count++] = bb;
+    if (cfg->count == cfg->capacity) {
+        cfg->capacity *= 2;
+        cfg->nodes = realloc(cfg->nodes, sizeof(BasicBlock*) * cfg->capacity);
+    }
+}
+
+void add_bb(BasicBlock* bb, ParsedInstruction* pi) {
+    bb->instructions[bb->instructions_count++] = pi;
+    if (bb->instructions_count == bb->instructions_capacity) {
+        bb->instructions_capacity *= 2;
+        bb->instructions = realloc(bb->instructions, sizeof(ParsedInstruction*) * bb->instructions_capacity);
+    }
+}
+
+CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
+    CFG* cfg = malloc(sizeof(CFG));
+    cfg->count = 0;
+    cfg->capacity = 16;
+    cfg->nodes = malloc(sizeof(BasicBlock*) * cfg->capacity);
+    // build a basic block spanning each leader
+    for (size_t i = 0; i < ls->count; i++) {
+        BasicBlock* bb = malloc(sizeof(BasicBlock));
+        bb->instructions_count = 0;
+        bb->incoming_count = 0;
+        bb->outgoing_count = 0;
+
+        bb->instructions_capacity = 16;
+        bb->incoming_capacity = 16;
+        bb->outgoing_capacity = 16;
+
+        bb->instructions = malloc(sizeof(ParsedInstruction*) * bb->instructions_capacity);
+        bb->incoming = malloc(sizeof(BasicBlock*) * bb->incoming_capacity);
+        bb->outgoing = malloc(sizeof(BasicBlock*) * bb->outgoing_capacity);
+
+        uint64_t pc_start = ls->leaders[i];
+        uint64_t pc_end; // inclusive
+        if (ls->count != i)
+            pc_end = ls->leaders[i] - 1; // if next leader isnt defined set end
+                                         // of basic block to last instruction
+        else pc_end = pa->count - 1;
+
+        // add instructions from pc_start:pc_end to bb
+        for (uint64_t i = pc_start; i <= pc_end; i++) {
+            add_bb(bb, pa->instructions[i]);
+        }
+    }
+    return cfg;
 }

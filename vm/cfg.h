@@ -1,16 +1,33 @@
 #ifndef CFG_H
 #define CFG_H
 
+/*
+ * cfg.h
+ *
+ * Define structures and functions for cfg.c to generate a control flow graph
+ */
+
 #include "../common/instruction.h"
 #include <stdint.h>
 #include <stddef.h>
 
+// TODO: there is a lot of ambiguity here between size_t and uint64_t, despite
+// being the same under the hood since jump addresses can be signed 64bit imms
+// we should use more consistency in the future to denote the relation between
+// jump values and the indexing of instructions. This is a problem for way off
+// in the future though as we wont start to see any side effects until using
+// values above INT_MAX.
+
 typedef struct {
-    ParsedInstruction** instructions; // atomic instruction unit
-    size_t count;               // # instructions
-	size_t capacity;
-    size_t connection_count;    // 0, 1, 2
-    struct BasicBlock** connections;
+    ParsedInstruction** instructions;
+    size_t instructions_count;
+    size_t instructions_capacity;
+    struct BasicBlock** incoming;
+    size_t incoming_count;
+    size_t incoming_capacity;
+    struct BasicBlock** outgoing;
+    size_t outgoing_count;
+    size_t outgoing_capacity;
 } BasicBlock;
 
 typedef struct {
@@ -37,9 +54,16 @@ typedef struct {
     size_t capacity;
 } LeaderSet;
 
+typedef struct {
+    BasicBlock** nodes;
+    size_t count;
+    size_t capacity;
+} CFG;
+
 // parsed array methods
 ParsedArray* init_parsed_array(void);
 void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
+
 JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
 LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
 
