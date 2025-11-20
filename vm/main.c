@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <sys/mman.h>   // mmap
 #include <inttypes.h>   // PRIX64
+#include <string.h>     // strerror
 #include "../common/config.h"
 #include "../common/instruction.h"
 
 #include "x86jit.h"
 #include "cfg.h"
+
+#include <errno.h>
 
 /**
     U2 VIRTUAL MACHINE
@@ -199,8 +202,8 @@ int main(int argc, char** argv) {
     char* bytecodePath = argv[1];
     FILE* bytecodeFile = fopen(bytecodePath, "rb");
     if (bytecodeFile == NULL) {
-        printf("Could not find file of path %s\n", bytecodePath);
-        exit(1);
+        fprintf(stderr, "Error opening file '%s': %s\n", bytecodePath, strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     // prepare memory for jit execution

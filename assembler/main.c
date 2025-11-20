@@ -183,16 +183,16 @@ int main(int argc, char** argv) {
     char* asmPath = argv[1];
     FILE* asmFile = fopen(asmPath, "r");
     if (asmFile == NULL) {
-        printf("Could not find file of path %s\n", asmPath);
-        exit(1);
+        fprintf(stderr, "Error opening file '%s': %s\n", asmPath, strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     // try to open output
     char* bcPath = argv[2];
     FILE* bcFile = fopen(bcPath, "wb");
     if (bcFile == NULL) {
-        printf("Could not open file of path %s\n", bcPath);
-        exit(1);
+        fprintf(stderr, "Error opening file '%s': %s\n", bcPath, strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     // initialize

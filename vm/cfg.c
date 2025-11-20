@@ -91,3 +91,21 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
 
     return jt;
 }
+
+/*
+ * STEP 3: GENERATE LEADERS FOR BASIC BLOCKS
+ *
+ * Ok so we have our jump table, now we need to actually break it into a cfg.
+ * To do this we first need to figure out where each block begins and ends
+ * sequentially. To do this we get the set of leaders then sort and deduplicate
+ * them. A leader is either the first instruction in the program, a jump
+ * target, or an instruction after a jump. We use these to start the basic
+ * blocks and consume instructions until either:
+ *
+ * A: Our next instruction is a leader (basic blocks can't have internal jumping!)
+ *
+ * B: We run into a jump instruction
+ *
+ * We can generate the full cfg based on which of these conditions we have hit
+ * and also which type of jump instruction we have hit!
+ */
