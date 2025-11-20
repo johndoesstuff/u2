@@ -80,6 +80,7 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
             JumpTableEntry* jte = malloc(sizeof(JumpTableEntry));
             jte->source_id = i;
             jte->target_id = i + (int64_t)sign_ext_imm__(imm, imm_ext);
+            jte->resolved_target_id = jte->source_id + jte->target_id;
             if (jt->count == jt->capacity) {
                 jt->capacity *= 2;
                 jt->entries = realloc(jt->entries, sizeof(JumpTableEntry*) * jt->capacity);

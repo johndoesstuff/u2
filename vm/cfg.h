@@ -20,8 +20,9 @@ typedef struct {
 } ParsedArray;
 
 typedef struct {
-    uint32_t target_id;
-    uint32_t source_id;
+    uint64_t target_id;
+    uint64_t resolved_target_id;
+    uint64_t source_id;
 } JumpTableEntry;
 
 typedef struct {

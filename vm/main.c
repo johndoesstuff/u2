@@ -234,8 +234,9 @@ int main(int argc, char** argv) {
     printf("    capacity: %lu\n", jt->capacity);
     for (size_t i = 0; i < jt->count; i++) {
         JumpTableEntry* jte = jt->entries[i];
-        printf("target_id %d\n", jte->target_id);
-        printf("source_id %u\n", jte->source_id);
+        printf("target_id %ld\n", (int64_t)jte->target_id);
+        printf("resolved_target_id %ld\n", jte->resolved_target_id);
+        printf("source_id %lu\n", jte->source_id);
     }
 
     do_pass(jit_pass, context, bytecodeFile);
