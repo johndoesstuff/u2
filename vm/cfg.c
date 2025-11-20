@@ -71,7 +71,9 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
     jt->entries = malloc(sizeof(JumpTableEntry) * jt->capacity);
     for (unsigned int i = 0; i < parsed_array->count; i++) {
         uint32_t op = parsed_array->instructions[i]->opcode;
+		printf("check if op is jump: %u (%s)\n", op, instruction_from_id(op));
         if (is_jump__(op)) {
+			printf("add to jt!\n");
             uint64_t imm = parsed_array->instructions[i]->imm;
             uint32_t imm_ext = parsed_array->instructions[i]->imm_ext;
             JumpTableEntry* jte = malloc(sizeof(JumpTableEntry));

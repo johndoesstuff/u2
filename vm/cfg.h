@@ -2,30 +2,32 @@
 #define CFG_H
 
 #include "../common/instruction.h"
+#include <stdint.h>
+#include <stddef.h>
 
 typedef struct {
     ParsedInstruction** instructions; // atomic instruction unit
-    unsigned int count;               // # instructions
-    unsigned int capacity;
-    unsigned int connection_count;    // 0, 1, 2
+    size_t count;               // # instructions
+	size_t capacity;
+    size_t connection_count;    // 0, 1, 2
     struct BasicBlock** connections;
 } BasicBlock;
 
 typedef struct {
     ParsedInstruction** instructions;
-    unsigned int count;
-    unsigned int capacity;
+    size_t count;
+    size_t capacity;
 } ParsedArray;
 
 typedef struct {
-    unsigned int target_id;
-    unsigned int source_id;
+    uint32_t target_id;
+    uint32_t source_id;
 } JumpTableEntry;
 
 typedef struct {
     JumpTableEntry** entries; // store jump table as array for cfg generation
-    unsigned int count;
-    unsigned int capacity;
+    size_t count;
+    size_t capacity;
 } JumpTable;
 
 // parsed array methods
