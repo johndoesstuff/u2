@@ -31,9 +31,16 @@ typedef struct {
     size_t capacity;
 } JumpTable;
 
+typedef struct {
+    uint64_t* leaders;
+    size_t count;
+    size_t capacity;
+} LeaderSet;
+
 // parsed array methods
 ParsedArray* init_parsed_array(void);
 void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
 JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
+LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
 
 #endif

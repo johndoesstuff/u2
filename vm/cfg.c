@@ -109,3 +109,41 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
  * We can generate the full cfg based on which of these conditions we have hit
  * and also which type of jump instruction we have hit!
  */
+
+int in_leaders(LeaderSet* ls, uint64_t pc) {
+    for (size_t i = 0; i < ls->count; i++) {
+        if (ls->leaders[i] == pc) return 1;
+    }
+    return 0;
+}
+
+void add_leader(LeaderSet* ls, uint64_t pc) {
+    if (in_leaders(ls, pc)) return; // O(n) but i just dont care, ok actually
+                                    // i kinda do a little.. TODO: fix this
+    ls->leaders[ls->count++] = pc;
+    if (ls->count == ls->capacity) {
+        ls->capacity *= 2;
+        ls->leaders = realloc(ls->leaders, sizeof(uint64_t) * ls->capacity);
+    }
+}
+
+LeaderSet* generate_leaders(ParsedArray* pa, JumpTable* jt) {
+    LeaderSet* ls = malloc(sizeof(LeaderSet));
+    ls->capacity = 16;
+    ls->count = 0;
+    ls->leaders = malloc(sizeof(uint64_t) * ls->capacity);
+
+    // add first instruction to leaders
+    add_leader(ls, 0);
+
+    // add jump targets (absolute)
+    for (size_t i = 0; i < jt->count; i++) {
+        JumpTableEntry* jte = jt->entries[i];
+        add_leader(ls, jte->resolved_target_id);
+        if (jte->source_id + 1 < pa->count)
+            add_leader(ls, jte->source_id + 1); // add instruction after jump if
+                                                // not at last line
+    }
+
+    return ls;
+}

@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
     parsed_arr = init_parsed_array();
     do_pass(cfg_pass, context, bytecodeFile);
     JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
-    (void)jt; // avoid -Wextra
+    LeaderSet* ls = generate_leaders(parsed_arr, jt);
     
     // debug jump table
     printf("JumpTable* jt:\n");
