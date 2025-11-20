@@ -227,16 +227,16 @@ int main(int argc, char** argv) {
     do_pass(cfg_pass, context, bytecodeFile);
     JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
     (void)jt; // avoid -Wextra
-	
-	// debug jump table
-	printf("JumpTable* jt:\n");
-	printf("    count: %lu\n", jt->count);
-	printf("    capacity: %lu\n", jt->capacity);
-	for (int i = 0; i < jt->count; i++) {
-		JumpTableEntry* jte = jt->entries[i];
-		printf("target_id %u\n", jte->target_id);
-		printf("source_id %u\n", jte->source_id);
-	}
+    
+    // debug jump table
+    printf("JumpTable* jt:\n");
+    printf("    count: %lu\n", jt->count);
+    printf("    capacity: %lu\n", jt->capacity);
+    for (size_t i = 0; i < jt->count; i++) {
+        JumpTableEntry* jte = jt->entries[i];
+        printf("target_id %d\n", jte->target_id);
+        printf("source_id %u\n", jte->source_id);
+    }
 
     do_pass(jit_pass, context, bytecodeFile);
 

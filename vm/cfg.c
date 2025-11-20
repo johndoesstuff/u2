@@ -16,16 +16,19 @@ ParsedArray* init_parsed_array() {
     ParsedArray* parsed_array = malloc(sizeof(ParsedArray));
     parsed_array->capacity = 16;
     parsed_array->count = 0;
-    parsed_array->instructions = malloc(sizeof(ParsedInstruction) * parsed_array->capacity);
+    parsed_array->instructions = malloc(sizeof(ParsedInstruction*) * parsed_array->capacity);
     return parsed_array;
 }
 
 void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction) {
     if (parsed_array->count == parsed_array->capacity) {
         parsed_array->capacity *= 2;
-        parsed_array->instructions = realloc(parsed_array->instructions, sizeof(ParsedInstruction) * parsed_array->capacity);
+        parsed_array->instructions = realloc(parsed_array->instructions, sizeof(ParsedInstruction*) * parsed_array->capacity);
     }
-    parsed_array->instructions[parsed_array->count++] = instruction;
+    // shallow copy! this will break if we add nested fields to ParsedInstruction!
+    ParsedInstruction* copy = malloc(sizeof(ParsedInstruction));
+    *copy = *instruction;
+    parsed_array->instructions[parsed_array->count++] = copy;
 }
 
 /*
@@ -68,12 +71,10 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
     JumpTable* jt = malloc(sizeof(JumpTable));
     jt->count = 0;
     jt->capacity = 16;
-    jt->entries = malloc(sizeof(JumpTableEntry) * jt->capacity);
+    jt->entries = malloc(sizeof(JumpTableEntry*) * jt->capacity);
     for (unsigned int i = 0; i < parsed_array->count; i++) {
         uint32_t op = parsed_array->instructions[i]->opcode;
-		printf("check if op is jump: %u (%s)\n", op, instruction_from_id(op));
         if (is_jump__(op)) {
-			printf("add to jt!\n");
             uint64_t imm = parsed_array->instructions[i]->imm;
             uint32_t imm_ext = parsed_array->instructions[i]->imm_ext;
             JumpTableEntry* jte = malloc(sizeof(JumpTableEntry));
@@ -81,7 +82,7 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
             jte->target_id = i + (int64_t)sign_ext_imm__(imm, imm_ext);
             if (jt->count == jt->capacity) {
                 jt->capacity *= 2;
-                jt->entries = realloc(jt->entries, sizeof(JumpTableEntry) * jt->capacity);
+                jt->entries = realloc(jt->entries, sizeof(JumpTableEntry*) * jt->capacity);
             }
             jt->entries[jt->count++] = jte;
         }

@@ -17,10 +17,13 @@ static int regcount = sizeof(u2a_regset)/sizeof(_x86_register);
 
 static void spill_reg(uint8_t** jit_memory, _x86_register reg) {
     // TODO
+    (void)jit_memory;
+    (void)reg;
 }
 
 _x86_register regalloc_u2a_x86(uint32_t reg) {
     // TODO
+    (void)reg;
     return _x86_RAX;
 }
 

@@ -3,3 +3,5 @@
 *.swo
 *.u2b
 assembler/assembler
+vm/vm
+tags
