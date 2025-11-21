@@ -230,6 +230,7 @@ int main(int argc, char** argv) {
     do_pass(cfg_pass, context, bytecodeFile);
     JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
     LeaderSet* ls = generate_leaders(parsed_arr, jt);
+    CFG* cfg = build_cfg(parsed_arr, jt, ls);
     
     // debug jump table
     printf("JumpTable* jt:\n");
@@ -241,6 +242,54 @@ int main(int argc, char** argv) {
         printf("resolved_target_id %ld\n", jte->resolved_target_id);
         printf("source_id %lu\n", jte->source_id);
     }
+
+    // debug cfg
+    printf("\n===== CFG DEBUG =====\n");
+    printf("CFG block count: %lu\n", cfg->count);
+
+    for (size_t bi = 0; bi < cfg->count; bi++) {
+        BasicBlock* bb = cfg->nodes[bi];
+
+        printf("\nBasicBlock #%lu\n", bi);
+        printf("  leader: %lu\n", bb->leader);
+        printf("  instructions_count: %lu\n", bb->instructions_count);
+
+        // Print instructions inside block
+        for (size_t ii = 0; ii < bb->instructions_count; ii++) {
+            ParsedInstruction* inst = bb->instructions[ii];
+            if (!inst) {
+                printf("    [%lu] NULL instruction!!\n", ii);
+                continue;
+            }
+            printf("    [%lu] opcode=%u rd=%u rs1=%u rs2=%u imm=%ld\n",
+                    ii, inst->opcode, inst->rd, inst->rs1, inst->rs2, inst->imm);
+        }
+
+        // Print incoming edges
+        printf("  incoming_count: %lu\n", bb->incoming_count);
+        for (size_t ic = 0; ic < bb->incoming_count; ic++) {
+            BasicBlock* in = bb->incoming[ic];
+            if (!in) {
+                printf("    incoming[%lu] = NULL (error)\n", ic);
+                continue;
+            }
+            printf("    incoming[%lu] -> leader %lu\n", ic, in->leader);
+        }
+
+        // Print outgoing edges
+        printf("  outgoing_count: %lu\n", bb->outgoing_count);
+        for (size_t oc = 0; oc < bb->outgoing_count; oc++) {
+            BasicBlock* out = bb->outgoing[oc];
+            if (!out) {
+                printf("    outgoing[%lu] = NULL (error)\n", oc);
+                continue;
+            }
+            printf("    outgoing[%lu] -> leader %lu\n", oc, out->leader);
+        }
+    }
+    printf("\n======================\n");
+
+    
 
     do_pass(jit_pass, context, bytecodeFile);
 

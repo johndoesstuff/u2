@@ -18,7 +18,7 @@
 // in the future though as we wont start to see any side effects until using
 // values above INT_MAX.
 
-typedef struct {
+typedef struct BasicBlock {
     ParsedInstruction** instructions;
     size_t instructions_count;
     size_t instructions_capacity;
@@ -28,6 +28,7 @@ typedef struct {
     struct BasicBlock** outgoing;
     size_t outgoing_count;
     size_t outgoing_capacity;
+    uint64_t leader;
 } BasicBlock;
 
 typedef struct {
@@ -66,5 +67,6 @@ void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction
 
 JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
 LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
+CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls);
 
 #endif

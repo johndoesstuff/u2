@@ -1,6 +1,7 @@
 #include "cfg.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 /*
  * cfg.c
@@ -47,6 +48,10 @@ int is_jump__(uint32_t opcode) {
     return opcode == U2_JMP || opcode == U2_JE || opcode == U2_JNE || opcode == U2_JL || opcode == U2_JG;
 }
 
+int is_jump_conditional__(uint32_t opcode) {
+    return opcode == U2_JE || opcode == U2_JNE || opcode == U2_JL || opcode == U2_JG;
+}
+
 // signs immediates based on extension for relative jumping (which i have
 // decided i am implementing as of 5 minutes ago)
 int64_t sign_ext_imm__(uint64_t imm, uint32_t imm_ext) {
@@ -61,6 +66,15 @@ int64_t sign_ext_imm__(uint64_t imm, uint32_t imm_ext) {
             printf("Internal Error: Those who know (skull emoji)\n");
             exit(1);
     }
+}
+
+JumpTableEntry* jte_from_source(uint64_t source, JumpTable* jt) {
+    for (size_t i = 0; i < jt->count; i++) {
+        if (jt->entries[i]->source_id == source) {
+            return jt->entries[i];
+        }
+    }
+    return NULL;
 }
 
 // remember, the only goal of this function is just to generate a jump table
@@ -188,6 +202,16 @@ void add_bb(BasicBlock* bb, ParsedInstruction* pi) {
     }
 }
 
+BasicBlock* get_bb_by_leader(CFG* cfg, uint64_t leader) {
+    for (size_t i = 0; i < cfg->count; i++) {
+        BasicBlock* bb = cfg->nodes[i];
+        if (bb->leader == leader) {
+            return bb;
+        }
+    }
+    return NULL;
+}
+
 CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
     CFG* cfg = malloc(sizeof(CFG));
     cfg->count = 0;
@@ -201,8 +225,12 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
         bb->outgoing_count = 0;
 
         bb->instructions_capacity = 16;
-        bb->incoming_capacity = 16;
-        bb->outgoing_capacity = 16;
+        bb->incoming_capacity = 2; // likely no situation will ever arise where
+                                   // there are more than 2 incoming or
+                                   // outgoing connections, as that would imply
+                                   // a conditional jump with 2 targets, but oh
+                                   // well..
+        bb->outgoing_capacity = 2;
 
         bb->instructions = malloc(sizeof(ParsedInstruction*) * bb->instructions_capacity);
         bb->incoming = malloc(sizeof(BasicBlock*) * bb->incoming_capacity);
@@ -210,14 +238,50 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
 
         uint64_t pc_start = ls->leaders[i];
         uint64_t pc_end; // inclusive
-        if (ls->count != i)
-            pc_end = ls->leaders[i] - 1; // if next leader isnt defined set end
+        if (ls->count != i + 1)
+            pc_end = ls->leaders[i + 1] - 1; // if next leader isnt defined set end
                                          // of basic block to last instruction
         else pc_end = pa->count - 1;
+
+        bb->leader = pc_start; // keeping track of bb leader is important for linking bbs
 
         // add instructions from pc_start:pc_end to bb
         for (uint64_t i = pc_start; i <= pc_end; i++) {
             add_bb(bb, pa->instructions[i]);
+        }
+        add_cfg(cfg, bb);
+    }
+
+    // connect bbs in cfg
+    for (size_t i = 0; i < cfg->count; i++) {
+        BasicBlock* bb = cfg->nodes[i];
+        
+        // connectivity is based on last instruction, if not jump, connect to
+        // leader of pc_end+1, if unconditional jump connect to leader of jump
+        // location. if conditional jump connect to both pc_end+1 and jump
+        // location :P
+        ParsedInstruction* li = bb->instructions[bb->instructions_count - 1];
+        uint64_t pc_end = bb->leader + bb->instructions_count - 1; // pc of li
+        
+        int jumps = is_jump__(li->opcode);
+        int fallthrough = is_jump_conditional__(li->opcode) || !jumps;
+
+        if (jumps) {
+            JumpTableEntry* jte = jte_from_source(pc_end, jt); // jump table of li
+            assert(jte != NULL);
+            BasicBlock* next_bb = get_bb_by_leader(cfg, jte->resolved_target_id); // inst jumped to
+            if (next_bb) {
+                bb->outgoing[bb->outgoing_count++] = next_bb;
+                next_bb->incoming[next_bb->incoming_count++] = bb;
+            }
+        }
+
+        if (fallthrough) {
+            BasicBlock* next_bb = get_bb_by_leader(cfg, pc_end + 1); // pc after li
+            if (next_bb) {
+                bb->outgoing[bb->outgoing_count++] = next_bb;
+                next_bb->incoming[next_bb->incoming_count++] = bb;
+            }
         }
     }
     return cfg;
