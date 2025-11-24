@@ -93,7 +93,7 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array) {
             uint32_t imm_ext = parsed_array->instructions[i]->imm_ext;
             JumpTableEntry* jte = malloc(sizeof(JumpTableEntry));
             jte->source_id = i;
-            jte->target_id = i + (int64_t)sign_ext_imm__(imm, imm_ext);
+            jte->target_id = (int64_t)sign_ext_imm__(imm, imm_ext);
             jte->resolved_target_id = jte->source_id + jte->target_id;
             if (jt->count == jt->capacity) {
                 jt->capacity *= 2;
@@ -240,14 +240,15 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
         uint64_t pc_end; // inclusive
         if (ls->count != i + 1)
             pc_end = ls->leaders[i + 1] - 1; // if next leader isnt defined set end
-                                         // of basic block to last instruction
+                                             // of basic block to last instruction
         else pc_end = pa->count - 1;
 
         bb->leader = pc_start; // keeping track of bb leader is important for linking bbs
 
         // add instructions from pc_start:pc_end to bb
-        for (uint64_t i = pc_start; i <= pc_end; i++) {
-            add_bb(bb, pa->instructions[i]);
+        for (uint64_t j = pc_start; j <= pc_end; j++) {
+            printf("Added instruction %lu (%p) to bb %ld\n", j, pa->instructions[j], i);
+            add_bb(bb, pa->instructions[j]);
         }
         add_cfg(cfg, bb);
     }
@@ -263,6 +264,13 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
         ParsedInstruction* li = bb->instructions[bb->instructions_count - 1];
         uint64_t pc_end = bb->leader + bb->instructions_count - 1; // pc of li
         
+        if (!li) {
+            printf("Odd, li NULL at bb %ld with pc_end of %lu\n", i, pc_end);
+            continue;
+        }
+
+        printf("%p\n", (void*)li);
+
         int jumps = is_jump__(li->opcode);
         int fallthrough = is_jump_conditional__(li->opcode) || !jumps;
 

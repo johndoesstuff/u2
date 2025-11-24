@@ -38,8 +38,8 @@ int count_args(char* line) {
 // each u2 bytecode instruction is 32 bits and is broken into different
 // components for different bit ranges, these functions set those bit ranges to
 // desired values for each parameter. for more information see vm/vm.txt
-void set_bit_range(uint32_t *instruction, int value, int start, int length) {
-    int mask = ((1 << length) - 1) << start;
+void set_bit_range(uint32_t *instruction, uint32_t value, int start, int length) {
+    uint32_t mask = ((1 << length) - 1u) << start;
     *instruction &= ~mask;
     *instruction |= (value & ((1 << length) - 1)) << start;
 }
@@ -61,7 +61,7 @@ void set_rs2(uint32_t* instruction, uint32_t rs2) {
 }
 
 void set_imm(uint32_t* instruction, uint64_t imm) {
-    set_bit_range(instruction, (int)imm, 0, 14);
+    set_bit_range(instruction, (uint32_t)imm, 0, 14);
 }
 
 void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
@@ -210,9 +210,9 @@ int main(int argc, char** argv) {
      * This system is necessary to resolve forward declared labels
      */
     int pass = 1;
-    uint32_t pc = 0;
 
     asm_pass:
+    uint32_t pc = 0;
     while ((read = getline(&line, &len, asmFile)) != -1) {
         // remove \n from line
         line[read - 1] = '\0';
