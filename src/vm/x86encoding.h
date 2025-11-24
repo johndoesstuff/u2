@@ -37,8 +37,8 @@ typedef struct {
     int reg_in_opcode;  // stupid shit like b8+rd
 } _x86_encoding;
 
-void emit_byte(uint8_t **jit_memory, uint8_t byte);
-void emit_x86instruction(uint8_t **jit_memory, _x86_encoding *encoding, uint32_t reg, uint32_t rm, uint64_t imm);
+void emit_byte(uint8_t** jit_memory, uint8_t byte);
+void emit_x86instruction(uint8_t** jit_memory, _x86_encoding* encoding, uint32_t reg, uint32_t rm, uint64_t imm);
 
 extern _x86_encoding __mov_r64_imm64;
 extern _x86_encoding __mov_r32_imm32;

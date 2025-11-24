@@ -25,9 +25,9 @@ extern int errno;
  */
 
 // helper function to count the number of args in a line
-int count_args(char *line) {
+int count_args(char* line) {
     int count = 0;
-    for (char *clone = line; *clone != '\0'; clone++) {
+    for (char* clone = line; *clone != '\0'; clone++) {
         while (isspace(*clone))
             clone++;
         if (*clone == ';')
@@ -40,33 +40,33 @@ int count_args(char *line) {
 // each u2 bytecode instruction is 32 bits and is broken into different
 // components for different bit ranges, these functions set those bit ranges to
 // desired values for each parameter. for more information see vm/vm.txt
-void set_bit_range(uint32_t *instruction, uint32_t value, int start, int length) {
+void set_bit_range(uint32_t* instruction, uint32_t value, int start, int length) {
     uint32_t mask = ((1 << length) - 1u) << start;
     *instruction &= ~mask;
     *instruction |= (value & ((1 << length) - 1)) << start;
 }
 
-void set_op(uint32_t *instruction, uint32_t opcode) {
+void set_op(uint32_t* instruction, uint32_t opcode) {
     set_bit_range(instruction, opcode, 26, 6);
 }
 
-void set_rd(uint32_t *instruction, uint32_t rd) {
+void set_rd(uint32_t* instruction, uint32_t rd) {
     set_bit_range(instruction, rd, 22, 4);
 }
 
-void set_rs1(uint32_t *instruction, uint32_t rs1) {
+void set_rs1(uint32_t* instruction, uint32_t rs1) {
     set_bit_range(instruction, rs1, 18, 4);
 }
 
-void set_rs2(uint32_t *instruction, uint32_t rs2) {
+void set_rs2(uint32_t* instruction, uint32_t rs2) {
     set_bit_range(instruction, rs2, 14, 4);
 }
 
-void set_imm(uint32_t *instruction, uint64_t imm) {
+void set_imm(uint32_t* instruction, uint64_t imm) {
     set_bit_range(instruction, (uint32_t)imm, 0, 14);
 }
 
-void emit_inst(uint32_t inst, FILE *fptr, uint32_t *pc) {
+void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
     // important to note is pc is relative to each 32bit segment, it would be
     // silly to give pc byte-level precision since all instructions are 4bytes
     (*pc)++;
@@ -76,8 +76,8 @@ void emit_inst(uint32_t inst, FILE *fptr, uint32_t *pc) {
 // expect_register is responsible for returning a uint32_t from a register
 // name. registers can be named r1-r16 but the actual number of a register is
 // only 0-15. as such registers are just stripped of 'r' and decremented
-uint32_t expect_register(char *reg) {
-    char *regc = reg;
+uint32_t expect_register(char* reg) {
+    char* regc = reg;
     if (reg == NULL) {
         printf("Internal Error: Invalid Register\n");
         exit(1);
@@ -88,7 +88,7 @@ uint32_t expect_register(char *reg) {
     }
     regc++;
 
-    char *endptr;
+    char* endptr;
     int64_t ret = strtoull(regc, &endptr, 10);
     if (*endptr != '\0') {
         printf("Invalid Register, unexpected character '%c' in %s\n", *endptr, reg);
@@ -107,18 +107,18 @@ uint32_t expect_register(char *reg) {
 // binary, and labels, and will resolve them into a *signed* 64 bit integer
 // (since immediates can be stored up to 64bits and can be negative for
 // relative addressing)
-int64_t expect_immediate(char *immediate, LabelTable *labels, int pass, uint64_t pc) {
+int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t pc) {
     if (immediate == NULL) {
         printf("Internal Error: Invalid Immediate\n");
         exit(1);
     }
 
     int is_neg = *immediate == '-';
-    char *immediate_num = immediate;
+    char* immediate_num = immediate;
     if (is_neg)
         immediate_num++;
 
-    char *endptr;
+    char* endptr;
     int base = 10;
 
     // lets cover all our bases! heh..
@@ -166,7 +166,7 @@ int64_t expect_immediate(char *immediate, LabelTable *labels, int pass, uint64_t
 }
 
 // get the first index in a char* of a char
-int get_first_char(char *str, char ch) {
+int get_first_char(char* str, char ch) {
     // return -1 if not found
     for (size_t i = 0; i < strlen(str); i++) {
         if (str[i] == ch)
@@ -175,7 +175,7 @@ int get_first_char(char *str, char ch) {
     return -1;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     // correct usage check
     if (argc < 3) {
         printf("Usage: u2asm assembly.u2a bytecode.u2b\n");
@@ -183,27 +183,27 @@ int main(int argc, char **argv) {
     }
 
     // try to open file
-    char *asmPath = argv[1];
-    FILE *asmFile = fopen(asmPath, "r");
+    char* asmPath = argv[1];
+    FILE* asmFile = fopen(asmPath, "r");
     if (asmFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", asmPath, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     // try to open output
-    char *bcPath = argv[2];
-    FILE *bcFile = fopen(bcPath, "wb");
+    char* bcPath = argv[2];
+    FILE* bcFile = fopen(bcPath, "wb");
     if (bcFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", bcPath, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     // initialize
-    char *line = NULL;
+    char* line = NULL;
     size_t linec = 0;
     size_t len;
     ssize_t read;
-    LabelTable *labels = new_label_table();
+    LabelTable* labels = new_label_table();
     /*
      * 2 PASS SYSTEM
      *
@@ -227,10 +227,10 @@ asm_pass:
         }
 
         // get op components
-        char **opargs = malloc(sizeof(char *) * (count_args(line) + 1));
-        char **opargs_base = opargs;
+        char** opargs = malloc(sizeof(char*) * (count_args(line) + 1));
+        char** opargs_base = opargs;
         int opargsc = 0;
-        char *pch = line;
+        char* pch = line;
 
         // ignore whitespace and tokenize arguments
         while (*pch) {
@@ -264,7 +264,7 @@ asm_pass:
             }
             if (pass == 1) {
                 // remove ending ':'
-                char *label_str = strdup(opargs[0]);
+                char* label_str = strdup(opargs[0]);
                 label_str[strlen(label_str) - 1] = '\0';
                 add_label(labels, label_str, pc);
                 printf("Added label %s\n", label_str);
@@ -276,7 +276,7 @@ asm_pass:
         int opcode = -1;
         for (int i = 0; i < Instruction_Count; i++) {
             // convert to lower (ops arent case sensitive)
-            for (char *t = opargs[0]; *t; ++t)
+            for (char* t = opargs[0]; *t; ++t)
                 *t = tolower(*t);
             if (strcmp(Instructions[i].name, opargs[0]) == 0) {
                 opcode = i;

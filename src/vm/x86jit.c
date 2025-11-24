@@ -24,17 +24,17 @@
     are handled as memory instead of registers.
 */
 
-void emit_x86ret(uint8_t **jit_memory) {
+void emit_x86ret(uint8_t** jit_memory) {
     emit_x86instruction(jit_memory, &__ret, 0, 0, 0);
 }
 
-void emit_x86ret_reg(uint8_t **jit_memory, uint32_t rd) {
+void emit_x86ret_reg(uint8_t** jit_memory, uint32_t rd) {
     int dst = regalloc_u2a_x86(rd - 1);
     emit_x86instruction(jit_memory, &__mov_rm64_r64, dst, 0, 0);
     emit_x86instruction(jit_memory, &__ret, dst, 0, 0);
 }
 
-void emit_mov(uint8_t **jit_memory, uint32_t rd, uint32_t rs1) {
+void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
     int dst = regalloc_u2a_x86(rd);
     int src = regalloc_u2a_x86(rs1);
 
@@ -53,7 +53,7 @@ void emit_mov(uint8_t **jit_memory, uint32_t rd, uint32_t rs1) {
     // TODO: implement spill
 }
 
-void emit_li(uint8_t **jit_memory, uint32_t rd, uint64_t imm) {
+void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
     int dst = regalloc_u2a_x86(rd);
 
     if (dst != _x86_SPILL) {
@@ -70,7 +70,7 @@ void emit_li(uint8_t **jit_memory, uint32_t rd, uint64_t imm) {
     }
 }
 
-void emit_ld(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
+void emit_ld(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -78,7 +78,7 @@ void emit_ld(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
     (void)imm;
 }
 
-void emit_st(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
+void emit_st(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -86,7 +86,7 @@ void emit_st(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint64_t imm) {
     (void)imm;
 }
 
-void emit_add(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_add(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -94,7 +94,7 @@ void emit_add(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_sub(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_sub(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -102,7 +102,7 @@ void emit_sub(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_mul(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_mul(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -110,7 +110,7 @@ void emit_mul(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_div(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_div(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -118,7 +118,7 @@ void emit_div(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_and(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_and(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -126,7 +126,7 @@ void emit_and(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_or(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_or(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -134,7 +134,7 @@ void emit_or(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_xor(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
+void emit_xor(uint8_t** jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     // TODO
     (void)jit_memory;
     (void)rd;
@@ -142,22 +142,22 @@ void emit_xor(uint8_t **jit_memory, uint32_t rd, uint32_t rs1, uint32_t rs2) {
     (void)rs2;
 }
 
-void emit_not(uint8_t **jit_memory, uint32_t rd, uint32_t rs1) {
+void emit_not(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
     // TODO
     (void)jit_memory;
     (void)rd;
     (void)rs1;
 }
 
-void init_jit(uint8_t **jit_memory) {
+void init_jit(uint8_t** jit_memory) {
     init_reg_spill_stack(jit_memory);
 }
 
-void free_jit(uint8_t **jit_memory) {
+void free_jit(uint8_t** jit_memory) {
     free_reg_spill_stack(jit_memory);
 }
 
-void emit_jit(uint8_t **jit_memory, uint32_t opcode, uint32_t rd, uint32_t rs1, uint32_t rs2, uint64_t imm) {
+void emit_jit(uint8_t** jit_memory, uint32_t opcode, uint32_t rd, uint32_t rs1, uint32_t rs2, uint64_t imm) {
     Opcode op = (Opcode)opcode;
     switch (op) {
     // TODO: modularly enum opcodes based on common instruction.h

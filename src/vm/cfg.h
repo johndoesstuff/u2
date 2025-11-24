@@ -19,20 +19,20 @@
 // values above INT_MAX.
 
 typedef struct BasicBlock {
-    ParsedInstruction **instructions;
+    ParsedInstruction** instructions;
     size_t instructions_count;
     size_t instructions_capacity;
-    struct BasicBlock **incoming;
+    struct BasicBlock** incoming;
     size_t incoming_count;
     size_t incoming_capacity;
-    struct BasicBlock **outgoing;
+    struct BasicBlock** outgoing;
     size_t outgoing_count;
     size_t outgoing_capacity;
     uint64_t leader;
 } BasicBlock;
 
 typedef struct {
-    ParsedInstruction **instructions;
+    ParsedInstruction** instructions;
     size_t count;
     size_t capacity;
 } ParsedArray;
@@ -44,29 +44,29 @@ typedef struct {
 } JumpTableEntry;
 
 typedef struct {
-    JumpTableEntry **entries;  // store jump table as array for cfg generation
+    JumpTableEntry** entries;  // store jump table as array for cfg generation
     size_t count;
     size_t capacity;
 } JumpTable;
 
 typedef struct {
-    uint64_t *leaders;
+    uint64_t* leaders;
     size_t count;
     size_t capacity;
 } LeaderSet;
 
 typedef struct {
-    BasicBlock **nodes;
+    BasicBlock** nodes;
     size_t count;
     size_t capacity;
 } CFG;
 
 // parsed array methods
-ParsedArray *init_parsed_array(void);
-void push_parsed_array(ParsedArray *parsed_array, ParsedInstruction *instruction);
+ParsedArray* init_parsed_array(void);
+void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction);
 
-JumpTable *jumptable_from_parsed_array(ParsedArray *parsed_array);
-LeaderSet *generate_leaders(ParsedArray *parsed_array, JumpTable *jump_table);
-CFG *build_cfg(ParsedArray *pa, JumpTable *jt, LeaderSet *ls);
+JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
+LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
+CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls);
 
 #endif

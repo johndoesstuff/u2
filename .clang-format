@@ -8,3 +8,4 @@ BreakBeforeBraces: Attach
 ColumnLimit: 120
 SortIncludes: true
 SpacesBeforeTrailingComments: 2
+PointerAlignment: Left

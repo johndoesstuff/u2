@@ -19,7 +19,7 @@ typedef enum {
 
 typedef struct {
     InstructionFormat format;
-    char *name;
+    char* name;
 } Instruction;
 
 typedef struct {
@@ -57,6 +57,6 @@ typedef enum {
 
 extern Instruction Instructions[];
 extern const int Instruction_Count;
-char *instruction_from_id(int id);
+char* instruction_from_id(int id);
 
 #endif
