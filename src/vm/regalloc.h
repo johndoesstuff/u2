@@ -15,7 +15,7 @@ typedef struct {
 } _x86_regstate;
 
 extern _x86_regstate regstate[16];
-void init_reg_spill_stack(uint8_t** jit_memory);
-void free_reg_spill_stack(uint8_t** jit_memory);
+void init_reg_spill_stack(uint8_t **jit_memory);
+void free_reg_spill_stack(uint8_t **jit_memory);
 
 #endif

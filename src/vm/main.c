@@ -1,13 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>   // mmap
-#include <inttypes.h>   // PRIX64
-#include <string.h>     // strerror
 #include "../common/config.h"
 #include "../common/instruction.h"
+#include <inttypes.h>  // PRIX64
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>    // strerror
+#include <sys/mman.h>  // mmap
 
-#include "x86jit.h"
 #include "cfg.h"
+#include "x86jit.h"
 
 #include <errno.h>
 
@@ -21,10 +21,10 @@
 */
 
 typedef struct {
-    uint8_t** jit_memory;   // pointer to the advance pointer, main way of
-                            // interfacing with jit memory
-    uint8_t* jit_base;      // pointer to the beginning of jit memory
-    uint8_t* jit_advance;   // pointer to the current position in jit_memory
+    uint8_t **jit_memory;  // pointer to the advance pointer, main way of
+                           // interfacing with jit memory
+    uint8_t *jit_base;     // pointer to the beginning of jit memory
+    uint8_t *jit_advance;  // pointer to the current position in jit_memory
 } Context;
 
 typedef struct {
@@ -34,9 +34,9 @@ typedef struct {
 } RegisterLifetime;
 
 // global for cfg pass
-ParsedArray* parsed_arr;
+ParsedArray *parsed_arr;
 
-uint32_t next_instruction(FILE* f, uint32_t* inst) {
+uint32_t next_instruction(FILE *f, uint32_t *inst) {
     size_t n = fread(inst, sizeof(uint32_t), 1, f);
     if (n != 1) {
         if (feof(f)) {
@@ -58,11 +58,11 @@ uint32_t get_rd(uint32_t inst) {
 }
 
 uint32_t get_rs1(uint32_t inst) {
-    return (inst >> (32 - OPCODE_BITS - 2*REG_BITS)) & ((1u << REG_BITS) - 1);
+    return (inst >> (32 - OPCODE_BITS - 2 * REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
 uint32_t get_rs2(uint32_t inst) {
-    return (inst >> (32 - OPCODE_BITS - 3*REG_BITS)) & ((1u << REG_BITS) - 1);
+    return (inst >> (32 - OPCODE_BITS - 3 * REG_BITS)) & ((1u << REG_BITS) - 1);
 }
 
 int64_t get_imm(uint32_t inst) {
@@ -75,11 +75,11 @@ int64_t get_imm(uint32_t inst) {
     return imm;
 }
 
-void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, FILE* fptr) {
-    rewind(fptr); // reset i/o if not already
+void do_pass(void (*pass_eval)(ParsedInstruction *, Context *), Context *context, FILE *fptr) {
+    rewind(fptr);  // reset i/o if not already
     uint32_t instruction;
     while (next_instruction(fptr, &instruction)) {
-        ParsedInstruction* parsed = malloc(sizeof(ParsedInstruction));
+        ParsedInstruction *parsed = malloc(sizeof(ParsedInstruction));
         uint32_t opcode = get_opcode(instruction);
         uint32_t rd = get_rd(instruction);
         uint32_t rs1 = get_rs1(instruction);
@@ -96,18 +96,19 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
         parsed->obj = instructionObj;
 
         // check for long immediates
-        if (rs2 && instructionObj.format != FORMAT_F) { // value in rs2 when
-                                                        // one shouldn't be
-                                                        // expected
-            switch (instructionObj.format) { // check imm extension is supported
-                case FORMAT_J:
-                case FORMAT_I:
-                case FORMAT_M:
-                    break;
-                default:
-                    printf("Immediate extension is not supported for"
-                           " instructions of type %s", instructionObj.name);
-                    exit(1);
+        if (rs2 && instructionObj.format != FORMAT_F) {  // value in rs2 when
+                                                         // one shouldn't be
+                                                         // expected
+            switch (instructionObj.format) {             // check imm extension is supported
+            case FORMAT_J:
+            case FORMAT_I:
+            case FORMAT_M:
+                break;
+            default:
+                printf("Immediate extension is not supported for"
+                       " instructions of type %s",
+                       instructionObj.name);
+                exit(1);
             }
 
             // if rs2 contains 1 or 2 load next rs2 bytes into imm
@@ -140,7 +141,7 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
     }
 }
 
-void _DEBUG_parsed_instruction(ParsedInstruction* parsed) {
+void _DEBUG_parsed_instruction(ParsedInstruction *parsed) {
     printf("ParsedInstruction {\n");
     printf("\topcode: %u (%s)\n", parsed->opcode, instruction_from_id(parsed->opcode));
     printf("\trd: %u\n", parsed->rd);
@@ -151,13 +152,13 @@ void _DEBUG_parsed_instruction(ParsedInstruction* parsed) {
     printf("}\n");
 }
 
-void _DEBUG_jump_table(JumpTable* jt) {
+void _DEBUG_jump_table(JumpTable *jt) {
     printf("JumpTable* {\n");
     printf("    count: %lu\n", jt->count);
     printf("    capacity: %lu\n", jt->capacity);
     printf("    entries: [\n");
     for (size_t i = 0; i < jt->count; i++) {
-        JumpTableEntry* jte = jt->entries[i];
+        JumpTableEntry *jte = jt->entries[i];
         printf("        {\n");
         printf("            target_id %ld\n", (int64_t)jte->target_id);
         printf("            resolved_target_id %lu\n", jte->resolved_target_id);
@@ -168,12 +169,12 @@ void _DEBUG_jump_table(JumpTable* jt) {
     printf("}\n");
 }
 
-void _DEBUG_cfg(CFG* cfg) {
+void _DEBUG_cfg(CFG *cfg) {
     printf("\n===== CFG DEBUG =====\n");
     printf("CFG block count: %lu\n", cfg->count);
 
     for (size_t bi = 0; bi < cfg->count; bi++) {
-        BasicBlock* bb = cfg->nodes[bi];
+        BasicBlock *bb = cfg->nodes[bi];
 
         printf("\nBasicBlock #%lu\n", bi);
         printf("  leader: %lu\n", bb->leader);
@@ -181,19 +182,19 @@ void _DEBUG_cfg(CFG* cfg) {
 
         // Print instructions inside block
         for (size_t ii = 0; ii < bb->instructions_count; ii++) {
-            ParsedInstruction* inst = bb->instructions[ii];
+            ParsedInstruction *inst = bb->instructions[ii];
             if (!inst) {
                 printf("    [%lu] NULL instruction!!\n", ii);
                 continue;
             }
-            printf("    [%lu] opcode=%u (%s) rd=%u rs1=%u rs2=%u imm=%ld\n",
-                    ii, inst->opcode, instruction_from_id(inst->opcode), inst->rd, inst->rs1, inst->rs2, inst->imm);
+            printf("    [%lu] opcode=%u (%s) rd=%u rs1=%u rs2=%u imm=%ld\n", ii, inst->opcode,
+                   instruction_from_id(inst->opcode), inst->rd, inst->rs1, inst->rs2, inst->imm);
         }
 
         // Print incoming edges
         printf("  incoming_count: %lu\n", bb->incoming_count);
         for (size_t ic = 0; ic < bb->incoming_count; ic++) {
-            BasicBlock* in = bb->incoming[ic];
+            BasicBlock *in = bb->incoming[ic];
             if (!in) {
                 printf("    incoming[%lu] = NULL (error)\n", ic);
                 continue;
@@ -204,7 +205,7 @@ void _DEBUG_cfg(CFG* cfg) {
         // Print outgoing edges
         printf("  outgoing_count: %lu\n", bb->outgoing_count);
         for (size_t oc = 0; oc < bb->outgoing_count; oc++) {
-            BasicBlock* out = bb->outgoing[oc];
+            BasicBlock *out = bb->outgoing[oc];
             if (!out) {
                 printf("    outgoing[%lu] = NULL (error)\n", oc);
                 continue;
@@ -215,13 +216,13 @@ void _DEBUG_cfg(CFG* cfg) {
     printf("\n======================\n");
 }
 
-void cfg_pass(ParsedInstruction* parsed, Context* context) {
+void cfg_pass(ParsedInstruction *parsed, Context *context) {
     push_parsed_array(parsed_arr, parsed);
     _DEBUG_parsed_instruction(parsed);
     (void)context;
 }
 
-void jit_pass(ParsedInstruction* parsed, Context* context) {
+void jit_pass(ParsedInstruction *parsed, Context *context) {
     // debug
     /*switch (parsed->obj.format) {
         case FORMAT_F:
@@ -251,11 +252,11 @@ void jit_pass(ParsedInstruction* parsed, Context* context) {
     emit_jit(context->jit_memory, parsed->opcode, parsed->rd, parsed->rs1, parsed->rs2, parsed->imm);
 }
 
-void free_context(Context* context) {
+void free_context(Context *context) {
     free(context);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     // correct usage check
     if (argc < 2) {
         printf("Usage: u2vm bytecode.u2b\n");
@@ -263,28 +264,27 @@ int main(int argc, char** argv) {
     }
 
     // try to open file
-    char* bytecodePath = argv[1];
-    FILE* bytecodeFile = fopen(bytecodePath, "rb");
+    char *bytecodePath = argv[1];
+    FILE *bytecodeFile = fopen(bytecodePath, "rb");
     if (bytecodeFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", bytecodePath, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     // prepare memory for jit execution
-    uint8_t *jit_base = mmap(NULL,    // address
-            4096,             // size
-            PROT_READ | PROT_WRITE | PROT_EXEC,
-            MAP_PRIVATE | MAP_ANONYMOUS,
-            -1,               // fd
-            0);               // offset
+    uint8_t *jit_base = mmap(NULL,  // address
+                             4096,  // size
+                             PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS,
+                             -1,  // fd
+                             0);  // offset
     if (jit_base == MAP_FAILED) {
         printf("Could not allocate memory for jit compilation!\n");
         exit(1);
     }
-    uint8_t* jit_advance = jit_base;
-    uint8_t** jit_memory = &jit_advance;
+    uint8_t *jit_advance = jit_base;
+    uint8_t **jit_memory = &jit_advance;
     init_jit(jit_memory);
-    Context* context = malloc(sizeof(Context));
+    Context *context = malloc(sizeof(Context));
     context->jit_memory = jit_memory;
     context->jit_base = jit_base;
     context->jit_advance = jit_advance;
@@ -292,10 +292,10 @@ int main(int argc, char** argv) {
     // init global for cfg pass
     parsed_arr = init_parsed_array();
     do_pass(cfg_pass, context, bytecodeFile);
-    JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
-    LeaderSet* ls = generate_leaders(parsed_arr, jt);
-    CFG* cfg = build_cfg(parsed_arr, jt, ls);
-    
+    JumpTable *jt = jumptable_from_parsed_array(parsed_arr);
+    LeaderSet *ls = generate_leaders(parsed_arr, jt);
+    CFG *cfg = build_cfg(parsed_arr, jt, ls);
+
     // debug jump table
     _DEBUG_jump_table(jt);
 
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
     printf("\n\n");
 
     // try to execute jit memory
-    uint64_t (*func)() = (uint64_t (*)())jit_base;
+    uint64_t (*func)() = (uint64_t(*)())jit_base;
     uint64_t result = func();
 
     printf("%" PRIX64 "\n", result);

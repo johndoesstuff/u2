@@ -1,5 +1,5 @@
 /**
-	U2 Instruction Set
+    U2 Instruction Set
 */
 
 #ifndef INSTRUCTION_H
@@ -8,55 +8,55 @@
 #include <stdint.h>
 
 typedef enum {
-	FORMAT_F,    // 3 register :                      ins r0 r1 r2
-	FORMAT_M,    // register to register + offset :   ins r0 r1 im
-	FORMAT_R,    // register to register :            ins r0 r1
-	FORMAT_I,    // immediate to register :           ins r0 im
-	FORMAT_J,    // immediate opcode :                ins im
-	FORMAT_D,    // register opcode :                 ins r0
-	FORMAT_NONE, // opcode :                          ins
+    FORMAT_F,     // 3 register :                      ins r0 r1 r2
+    FORMAT_M,     // register to register + offset :   ins r0 r1 im
+    FORMAT_R,     // register to register :            ins r0 r1
+    FORMAT_I,     // immediate to register :           ins r0 im
+    FORMAT_J,     // immediate opcode :                ins im
+    FORMAT_D,     // register opcode :                 ins r0
+    FORMAT_NONE,  // opcode :                          ins
 } InstructionFormat;
 
 typedef struct {
-	InstructionFormat format; 
-	char* name;
+    InstructionFormat format;
+    char *name;
 } Instruction;
 
 typedef struct {
-	uint32_t opcode;
-	uint32_t rd;
-	uint32_t rs1;
-	uint32_t rs2;
-	uint32_t imm_ext;
-	uint64_t imm;
-	Instruction obj;
+    uint32_t opcode;
+    uint32_t rd;
+    uint32_t rs1;
+    uint32_t rs2;
+    uint32_t imm_ext;
+    uint64_t imm;
+    Instruction obj;
 } ParsedInstruction;
 
 typedef enum {
-	U2_MOV,
-	U2_LI,
-	U2_LD,
-	U2_ST,
-	U2_ADD,
-	U2_SUB,
-	U2_MUL,
-	U2_DIV,
-	U2_AND,
-	U2_OR,
-	U2_XOR,
-	U2_NOT,
-	U2_SHL,
-	U2_SHR,
-	U2_CMP,
-	U2_JMP,
-	U2_JE,
-	U2_JNE,
-	U2_JL,
-	U2_JG,
+    U2_MOV,
+    U2_LI,
+    U2_LD,
+    U2_ST,
+    U2_ADD,
+    U2_SUB,
+    U2_MUL,
+    U2_DIV,
+    U2_AND,
+    U2_OR,
+    U2_XOR,
+    U2_NOT,
+    U2_SHL,
+    U2_SHR,
+    U2_CMP,
+    U2_JMP,
+    U2_JE,
+    U2_JNE,
+    U2_JL,
+    U2_JG,
 } Opcode;
 
 extern Instruction Instructions[];
 extern const int Instruction_Count;
-char* instruction_from_id(int id);
+char *instruction_from_id(int id);
 
 #endif

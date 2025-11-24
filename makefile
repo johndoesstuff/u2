@@ -39,3 +39,10 @@ test: $(TEST_OUTPUTS)
 
 tests/%.u2b: tests/%.u2a $(ASM_BIN)
 	$(ASM_BIN) $< $@
+
+format-dry:
+	clang-format-18 --dry-run --Werror -style=file $(find . -name '*.c' -o -name '*.h')
+
+format:
+	find . -regex '.*\.\(c\|h\|cpp\|hpp\)$$' -exec clang-format-18 -i {} +
+
