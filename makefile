@@ -2,12 +2,12 @@
 CC       = gcc
 CFLAGS   = -g3 -Wall -Wextra
 
-COMMON   = common/instruction.c
-VM_SRC   = vm/cfg.c vm/x86encoding.c vm/regalloc.c vm/x86jit.c vm/main.c
-ASM_SRC  = assembler/main.c
+COMMON   = src/common/instruction.c
+VM_SRC   = src/vm/cfg.c src/vm/x86encoding.c src/vm/regalloc.c src/vm/x86jit.c src/vm/main.c
+ASM_SRC  = src/assembler/main.c
 
-VM_BIN   = vm/vm
-ASM_BIN  = assembler/assembler
+VM_BIN   = build/vm
+ASM_BIN  = build/assembler
 
 TEST_SOURCES := $(wildcard tests/*.u2a)
 TEST_OUTPUTS := $(TEST_SOURCES:.u2a=.u2b)
@@ -37,5 +37,5 @@ test: $(TEST_OUTPUTS)
 		$(VM_BIN) $$b; \
 	done
 
-tests/%.u2b: tests/%.u2a assembler/assembler
+tests/%.u2b: tests/%.u2a $(ASM_BIN)
 	$(ASM_BIN) $< $@

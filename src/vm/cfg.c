@@ -294,3 +294,17 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
     }
     return cfg;
 }
+
+/*
+ * STEP 5:
+ *
+ * Now that we have a cfg to use it for register allocation we need to check
+ * which registers are expected and produced by each basic block
+ */
+
+uint8_t* live_in_from_bb(BasicBlock* bb) {
+    ParsedInstruction** instructions = bb->instructions;
+    for (size_t i = 0; i < bb->instructions_count; i++) {
+        
+    }
+}
