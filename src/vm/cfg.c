@@ -241,6 +241,9 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
         bb->incoming = malloc(sizeof(BasicBlock*) * bb->incoming_capacity);
         bb->outgoing = malloc(sizeof(BasicBlock*) * bb->outgoing_capacity);
 
+        bb->live_in = 0;
+        bb->live_out = 0;
+
         uint64_t pc_start = ls->leaders[i];
         uint64_t pc_end;  // inclusive
         if (ls->count != i + 1)
@@ -326,7 +329,6 @@ uint16_t live_in_from_bb(BasicBlock* bb) {
                 live_in |= 1 << instruction->rs1;
             __attribute__((fallthrough));
         case FORMAT_I:
-        case FORMAT_J:
         case FORMAT_D:
             defined |= 1 << instruction->rd;
         default:
@@ -334,4 +336,51 @@ uint16_t live_in_from_bb(BasicBlock* bb) {
         }
     }
     return live_in;
+}
+
+// return a 16bit bitmask of which registers are expected out
+uint16_t live_out_from_bb(BasicBlock* bb) {
+    uint16_t live_out = 0;
+    for (size_t i = 0; i < bb->outgoing_count; i++) {
+        live_out |= live_in_from_bb(bb->outgoing[i]);
+    }
+    return live_out;
+}
+
+// return a 16bit bitmask of which registers are defined
+uint16_t defined_in_bb(BasicBlock* bb) {
+    ParsedInstruction** instructions = bb->instructions;
+    uint16_t defined = 0;
+    for (size_t i = 0; i < bb->instructions_count; i++) {
+        ParsedInstruction* instruction = instructions[i];
+        if (instruction->obj.format != FORMAT_NONE || instruction->obj.format != FORMAT_J) {
+            defined |= 1 << instruction->rd;
+        }
+    }
+    return defined;
+}
+
+// flow liveness across cfg
+void compute_liveness(CFG* cfg) {
+    int changed = 1;
+    do {
+        changed = 0;
+
+        for (size_t i = 0; i < cfg->count; i++) {
+            BasicBlock* bb = cfg->nodes[i];
+
+            uint16_t old_live_in = bb->live_in;
+            uint16_t old_live_out = bb->live_out;
+
+            uint16_t new_live_out = 0;
+            for (size_t j = 0; j < bb->outgoing_count; j++)
+                new_live_out |= bb->outgoing[j]->live_in;
+            bb->live_out = new_live_out;
+
+            bb->live_in = live_in_from_bb(bb) | (bb->live_out & ~defined_in_bb(bb));
+
+            if (bb->live_in != old_live_in || bb->live_out != old_live_out)
+                changed = 1;
+        }
+    } while (changed);
 }

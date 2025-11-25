@@ -169,6 +169,11 @@ void _DEBUG_jump_table(JumpTable* jt) {
     printf("}\n");
 }
 
+void print_bitmask(uint16_t mask) {
+    for (int i = 15; i >= 0; i--)
+        putchar((mask & (1 << i)) ? '1' : '0');
+}
+
 void _DEBUG_cfg(CFG* cfg) {
     printf("\n===== CFG DEBUG =====\n");
     printf("CFG block count: %lu\n", cfg->count);
@@ -212,6 +217,14 @@ void _DEBUG_cfg(CFG* cfg) {
             }
             printf("    outgoing[%lu] -> leader %lu\n", oc, out->leader);
         }
+
+        // Print live_in and live_out
+        printf("  live_in : 0b");
+        print_bitmask(bb->live_in);
+        printf("\n");
+        printf("  live_out: 0b");
+        print_bitmask(bb->live_out);
+        printf("\n");
     }
     printf("\n======================\n");
 }
@@ -295,6 +308,7 @@ int main(int argc, char** argv) {
     JumpTable* jt = jumptable_from_parsed_array(parsed_arr);
     LeaderSet* ls = generate_leaders(parsed_arr, jt);
     CFG* cfg = build_cfg(parsed_arr, jt, ls);
+    compute_liveness(cfg);
 
     // debug jump table
     _DEBUG_jump_table(jt);

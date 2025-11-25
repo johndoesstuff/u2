@@ -19,16 +19,27 @@
 // values above INT_MAX.
 
 typedef struct BasicBlock {
+    // instructions encapsulated
     ParsedInstruction** instructions;
     size_t instructions_count;
     size_t instructions_capacity;
+
+    // incoming connections
     struct BasicBlock** incoming;
     size_t incoming_count;
     size_t incoming_capacity;
+
+    // outgoing connections
     struct BasicBlock** outgoing;
     size_t outgoing_count;
     size_t outgoing_capacity;
+
+    // pc of start instruction
     uint64_t leader;
+
+    // liveness bitmasks
+    uint16_t live_in;
+    uint16_t live_out;
 } BasicBlock;
 
 typedef struct {
@@ -68,5 +79,6 @@ void push_parsed_array(ParsedArray* parsed_array, ParsedInstruction* instruction
 JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
 LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
 CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls);
+void compute_liveness(CFG* cfg);
 
 #endif
