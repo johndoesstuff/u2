@@ -8,8 +8,10 @@ ASM_SRC  = src/assembler/main.c
 
 VIM_SRC  = src/common/u2a.vim
 
-VM_BIN   = build/vm
-ASM_BIN  = build/assembler
+BUILD_DIR= build
+
+VM_BIN   = build/u2vm
+ASM_BIN  = build/u2asm
 
 TEST_SOURCES := $(wildcard tests/*.u2a)
 TEST_OUTPUTS := $(TEST_SOURCES:.u2a=.u2b)
@@ -17,14 +19,15 @@ TEST_OUTPUTS := $(TEST_SOURCES:.u2a=.u2b)
 all: $(VM_BIN) $(ASM_BIN)
 
 $(VM_BIN): $(COMMON) $(VM_SRC)
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON) $(VM_SRC) -o $(VM_BIN)
 
 $(ASM_BIN): $(COMMON) $(ASM_SRC)
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON) $(ASM_SRC) -o $(ASM_BIN)
 
 clean:
-	rm $(VM_BIN)
-	rm $(ASM_BIN)
+	rm -rf $(BUILD_DIR)
 
 syntax:
 	mkdir -p ~/.vim/syntax
