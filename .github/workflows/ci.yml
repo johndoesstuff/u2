@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the code
+      - uses: actions/checkout@v4
+
+      # 2. Install dependencies
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y gcc make clang-format-18
+
+      # 3. Run formatting check
+      - name: Check formatting
+        run: make format-dry
+
+      # 4. Build project
+      - name: Build
+        run: make all
+
+      # 5. Run tests
+      - name: Test
+        run: make test
+

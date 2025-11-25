@@ -1,10 +1,12 @@
 
 CC       = gcc
-CFLAGS   = -g3 -Wall -Wextra
+CFLAGS   = -g3 -Wall -Wextra -Werror
 
 COMMON   = src/common/instruction.c
 VM_SRC   = src/vm/cfg.c src/vm/x86encoding.c src/vm/regalloc.c src/vm/x86jit.c src/vm/main.c
 ASM_SRC  = src/assembler/main.c
+
+VIM_SRC  = src/common/u2a.vim
 
 VM_BIN   = build/vm
 ASM_BIN  = build/assembler
@@ -26,7 +28,7 @@ clean:
 
 syntax:
 	mkdir -p ~/.vim/syntax
-	sudo cp u2a.vim ~/.vim/syntax/u2a.vim
+	sudo cp $(VIM_SRC) ~/.vim/syntax/u2a.vim
 	mkdir -p ~/.vim/ftdetect
 	echo "au BufRead,BufNewFile *.u2a set filetype=u2a" > ~/.vim/ftdetect/u2a.vim
 
@@ -41,8 +43,8 @@ tests/%.u2b: tests/%.u2a $(ASM_BIN)
 	$(ASM_BIN) $< $@
 
 format-dry:
-	clang-format-18 --dry-run --Werror -style=file $(find . -name '*.c' -o -name '*.h')
+	find . -regex '.*\.\(c\|h\)$$' -exec clang-format-18 --dry-run --Werror {} +
 
 format:
-	find . -regex '.*\.\(c\|h\|cpp\|hpp\)$$' -exec clang-format-18 -i {} +
+	find . -regex '.*\.\(c\|h\)$$' -exec clang-format-18 -i {} +
 

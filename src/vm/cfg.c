@@ -308,8 +308,30 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
  * which registers are expected and produced by each basic block
  */
 
-uint8_t* live_in_from_bb(BasicBlock* bb) {
+// return a 16bit bitmask of which registers are expected
+uint16_t live_in_from_bb(BasicBlock* bb) {
     ParsedInstruction** instructions = bb->instructions;
+    uint16_t live_in = 0;
+    uint16_t defined = 0;
     for (size_t i = 0; i < bb->instructions_count; i++) {
+        ParsedInstruction* instruction = instructions[i];
+        switch (instruction->obj.format) {
+        case FORMAT_F:
+            if (!(defined & (1 << instruction->rs2)))
+                live_in |= 1 << instruction->rs2;
+            __attribute__((fallthrough));  // tell GCC we want to fall through
+        case FORMAT_M:
+        case FORMAT_R:
+            if (!(defined & (1 << instruction->rs1)))
+                live_in |= 1 << instruction->rs1;
+            __attribute__((fallthrough));
+        case FORMAT_I:
+        case FORMAT_J:
+        case FORMAT_D:
+            defined |= 1 << instruction->rd;
+        default:
+            break;
+        }
     }
+    return live_in;
 }

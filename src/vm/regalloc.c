@@ -5,13 +5,14 @@ _x86_register u2a_regset[] = {
     _x86_RAX, _x86_RCX, _x86_RDX, _x86_RSI, _x86_RDI, _x86_R8, _x86_R9, _x86_R10, _x86_R11,
 };
 
+/*
 static int regcount = sizeof(u2a_regset) / sizeof(_x86_register);
 
 static void spill_reg(uint8_t** jit_memory, _x86_register reg) {
     // TODO
     (void)jit_memory;
     (void)reg;
-}
+}*/
 
 _x86_register regalloc_u2a_x86(uint32_t reg) {
     // TODO

@@ -6,6 +6,9 @@
  * bytecode accounting for label positioning for relative addresses
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 typedef struct {
     char* name;
     uint32_t pc;
