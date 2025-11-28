@@ -13,6 +13,10 @@
 
 #include <errno.h>
 
+#define printf_DEBUG                                                                                                   \
+    if (DEV_DEBUG)                                                                                                     \
+    printf
+
 extern int errno;
 
 /**
@@ -79,26 +83,26 @@ void emit_inst(uint32_t inst, FILE* fptr, uint32_t* pc) {
 uint32_t expect_register(char* reg) {
     char* regc = reg;
     if (reg == NULL) {
-        printf("Internal Error: Invalid Register\n");
-        exit(1);
+        fprintf(stderr, "Internal Error: Invalid Register\n");
+        exit(EXIT_FAILURE);
     }
     if (tolower(*regc) != 'r') {
-        printf("Invalid Register '%s', expected [r1-r16]\n", reg);
-        exit(1);
+        fprintf(stderr, "Invalid Register '%s', expected [r1-r16]\n", reg);
+        exit(EXIT_FAILURE);
     }
     regc++;
 
     char* endptr;
     int64_t ret = strtoull(regc, &endptr, 10);
     if (*endptr != '\0') {
-        printf("Invalid Register, unexpected character '%c' in %s\n", *endptr, reg);
-        exit(1);
+        fprintf(stderr, "Invalid Register, unexpected character '%c' in %s\n", *endptr, reg);
+        exit(EXIT_FAILURE);
     }
 
     // atoi fail or invalid reg range
     if (ret > 16 || ret <= 0) {
-        printf("Invalid Register '%s', expected [r1-r16]\n", reg);
-        exit(1);
+        fprintf(stderr, "Invalid Register '%s', expected [r1-r16]\n", reg);
+        exit(EXIT_FAILURE);
     }
     return (uint32_t)ret;
 }
@@ -109,8 +113,8 @@ uint32_t expect_register(char* reg) {
 // relative addressing)
 int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t pc) {
     if (immediate == NULL) {
-        printf("Internal Error: Invalid Immediate\n");
-        exit(1);
+        fprintf(stderr, "Internal Error: Invalid Immediate\n");
+        exit(EXIT_FAILURE);
     }
 
     int is_neg = *immediate == '-';
@@ -135,7 +139,7 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
     int64_t val = strtoll(immediate_num, &endptr, base);
     if (errno == ERANGE) {
         perror("Immediate out of range");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     if (*endptr != '\0') {
@@ -146,8 +150,8 @@ int64_t expect_immediate(char* immediate, LabelTable* labels, int pass, uint64_t
 
         int fl = find_label(labels, immediate);
         if (fl < 0) {  // we've done all we can.. give up :(
-            printf("Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
-            exit(1);
+            fprintf(stderr, "Invalid Immediate, unexpected character '%c' in %s\n", *endptr, immediate);
+            exit(EXIT_FAILURE);
         }
         // reformat label pc to be relative to current position (all labels are
         // relative addressing) the issue with this is negative immediates
@@ -176,22 +180,50 @@ int get_first_char(char* str, char ch) {
 }
 
 int main(int argc, char** argv) {
-    // correct usage check
-    if (argc < 3) {
-        printf("Usage: u2asm assembly.u2a bytecode.u2b\n");
-        exit(1);
+    int DEV_DEBUG = 0;
+    char* asmPath = NULL;
+    char* bcPath = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        char* arg = argv[i];
+
+        if (arg[0] == '-') {
+            // flags
+            if (strcmp(arg, "--dev") == 0) {
+                DEV_DEBUG = 1;
+            } else {
+                fprintf(stderr, "Unknown flag: %s\n", arg);
+                fprintf(stderr, "Usage: u2asm [flags] assembly.u2a bytecode.u2b\n");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            // files
+            if (asmPath == NULL)
+                asmPath = arg;
+            else if (bcPath == NULL)
+                bcPath = arg;
+            else {
+                fprintf(stderr, "Too many arguments.\n");
+                fprintf(stderr, "Usage: u2asm [flags] assembly.u2a bytecode.u2b\n");
+                exit(EXIT_FAILURE);
+            }
+        }
     }
 
-    // try to open file
-    char* asmPath = argv[1];
+    if (asmPath == NULL || bcPath == NULL) {
+        fprintf(stderr, "Missing input/output files.\n");
+        fprintf(stderr, "Usage: u2asm [--dev] assembly.u2a bytecode.u2b\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // open asm file
     FILE* asmFile = fopen(asmPath, "r");
     if (asmFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", asmPath, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    // try to open output
-    char* bcPath = argv[2];
+    // open bc file
     FILE* bcFile = fopen(bcPath, "wb");
     if (bcFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", bcPath, strerror(errno));
@@ -247,7 +279,7 @@ asm_pass:
                 *pch = '\0';
                 pch++;
             }
-            printf("Found arg: %s\n", opargs[opargsc - 1]);
+            printf_DEBUG("Found arg: %s\n", opargs[opargsc - 1]);
         }
 
         // if line is empty ignore
@@ -258,16 +290,16 @@ asm_pass:
         if (opargs[0][strlen(opargs[0]) - 1] == ':') {
             if (opargsc != 1) {
                 // why would you include something after the label??
-                printf("Adding instructions in the same line as a label isn't"
-                       " currently supported.\n");
-                exit(1);
+                fprintf(stderr, "Adding instructions in the same line as a label isn't"
+                                " currently supported.\n");
+                exit(EXIT_FAILURE);
             }
             if (pass == 1) {
                 // remove ending ':'
                 char* label_str = strdup(opargs[0]);
                 label_str[strlen(label_str) - 1] = '\0';
                 add_label(labels, label_str, pc);
-                printf("Added label %s\n", label_str);
+                printf_DEBUG("Added label %s\n", label_str);
             }
             continue;
         }
@@ -285,8 +317,8 @@ asm_pass:
         }
 
         if (opcode == -1) {
-            printf("Unknown Instruction \"%s\"\n", opargs[0]);
-            exit(1);
+            fprintf(stderr, "Unknown Instruction \"%s\"\n", opargs[0]);
+            exit(EXIT_FAILURE);
         }
 
         // correct format?
@@ -350,20 +382,20 @@ asm_pass:
             // check imm extension is supported
             if (instruction.format & 0b0100 || !(instruction.format & 0b1000)) {
                 printf("Invalid Immediate extension format!\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
-            printf("Instruction: %X (%dbit ext)\n", instBC, 32 * imm_size);
+            printf_DEBUG("Instruction: %X (%dbit ext)\n", instBC, 32 * imm_size);
             emit_inst(instBC, bcFile, &pc);
             int32_t imm_ext = (int32_t)(imm & 0xFFFFFFFF);
-            printf("Imm extension: %X\n", imm_ext);
+            printf_DEBUG("Imm extension: %X\n", imm_ext);
             emit_inst((uint32_t)imm_ext, bcFile, &pc);
             if (imm_size == 2) {
                 imm_ext = (int32_t)((imm >> 32) & 0xFFFFFFFF);
-                printf("Imm extension: %X\n", imm_ext);
+                printf_DEBUG("Imm extension: %X\n", imm_ext);
                 emit_inst((uint32_t)imm_ext, bcFile, &pc);  // 64bit extension
             }
         } else {
-            printf("Instruction: %X\n", instBC);
+            printf_DEBUG("Instruction: %X\n", instBC);
             emit_inst(instBC, bcFile, &pc);
         }
 

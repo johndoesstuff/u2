@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../common/debug.h"
+
+extern int DEV_DEBUG;
+
 /*
  * cfg.c
  *
@@ -64,8 +68,8 @@ int64_t sign_ext_imm__(uint64_t imm, uint32_t imm_ext) {
     case 2:  // imm is uint64
         return imm;
     default:
-        printf("Internal Error: Those who know (skull emoji)\n");
-        exit(1);
+        fprintf(stderr, "Internal Error: Those who know (skull emoji)\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -256,7 +260,7 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
 
         // add instructions from pc_start:pc_end to bb
         for (uint64_t j = pc_start; j <= pc_end; j++) {
-            printf("Added instruction %lu (%p) to bb %ld\n", j, pa->instructions[j], i);
+            printf_DEBUG("Added instruction %lu to bb %ld\n", j, i);
             add_bb(bb, pa->instructions[j]);
         }
         add_cfg(cfg, bb);
@@ -277,8 +281,6 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
             printf("Odd, li NULL at bb %ld with pc_end of %lu\n", i, pc_end);
             continue;
         }
-
-        printf("%p\n", (void*)li);
 
         int jumps = is_jump__(li->opcode);
         int fallthrough = is_jump_conditional__(li->opcode) || !jumps;

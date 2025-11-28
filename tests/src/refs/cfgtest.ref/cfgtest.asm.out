@@ -1,0 +1,140 @@
+Found arg: li
+Found arg: r1
+Found arg: 10
+Instruction: 440000A
+Found arg: li
+Found arg: r2
+Found arg: 0
+Instruction: 4800000
+Found arg: li
+Found arg: r4
+Found arg: 1
+Instruction: 5000001
+Found arg: li
+Found arg: r5
+Found arg: 5
+Instruction: 5400005
+Found arg: start_loop:
+Added label start_loop
+Found arg: cmp
+Found arg: r1
+Found arg: r4
+Instruction: 38040000
+Found arg: jl
+Found arg: end_loop
+Instruction: 48000000
+Found arg: add
+Found arg: r2
+Found arg: r2
+Found arg: r1
+Instruction: 10880000
+Found arg: cmp
+Found arg: r1
+Found arg: r5
+Instruction: 38040000
+Found arg: jg
+Found arg: special_case
+Instruction: 4C000000
+Found arg: jmp
+Found arg: continue_loop
+Instruction: 3C000000
+Found arg: special_case:
+Added label special_case
+Found arg: sub
+Found arg: r2
+Found arg: r2
+Found arg: r4
+Instruction: 14880000
+Found arg: continue_loop:
+Added label continue_loop
+Found arg: sub
+Found arg: r1
+Found arg: r1
+Found arg: r4
+Instruction: 14440000
+Found arg: jmp
+Found arg: start_loop
+Instruction: 3C000000
+Found arg: end_loop:
+Added label end_loop
+Found arg: st
+Found arg: r2
+Found arg: r3
+Found arg: 42
+Instruction: C08002A
+Found arg: li
+Found arg: r6
+Found arg: 123
+Instruction: 580007B
+Found arg: mov
+Found arg: r6
+Found arg: r7
+Instruction: 19C0000
+Found arg: li
+Found arg: r1
+Found arg: 10
+Instruction: 440000A
+Found arg: li
+Found arg: r2
+Found arg: 0
+Instruction: 4800000
+Found arg: li
+Found arg: r4
+Found arg: 1
+Instruction: 5000001
+Found arg: li
+Found arg: r5
+Found arg: 5
+Instruction: 5400005
+Found arg: start_loop:
+Found arg: cmp
+Found arg: r1
+Found arg: r4
+Instruction: 38040000
+Found arg: jl
+Found arg: end_loop
+Instruction: 48000008
+Found arg: add
+Found arg: r2
+Found arg: r2
+Found arg: r1
+Instruction: 10880000
+Found arg: cmp
+Found arg: r1
+Found arg: r5
+Instruction: 38040000
+Found arg: jg
+Found arg: special_case
+Instruction: 4C000002
+Found arg: jmp
+Found arg: continue_loop
+Instruction: 3C000002
+Found arg: special_case:
+Found arg: sub
+Found arg: r2
+Found arg: r2
+Found arg: r4
+Instruction: 14880000
+Found arg: continue_loop:
+Found arg: sub
+Found arg: r1
+Found arg: r1
+Found arg: r4
+Instruction: 14440000
+Found arg: jmp
+Found arg: start_loop
+Instruction: 3C003FF8
+Found arg: end_loop:
+Found arg: st
+Found arg: r2
+Found arg: r3
+Found arg: 42
+Instruction: C08002A
+Found arg: li
+Found arg: r6
+Found arg: 123
+Instruction: 580007B
+Found arg: mov
+Found arg: r6
+Found arg: r7
+Instruction: 19C0000

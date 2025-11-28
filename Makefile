@@ -36,14 +36,8 @@ syntax:
 	echo "au BufRead,BufNewFile *.u2a set filetype=u2a" > ~/.vim/ftdetect/u2a.vim
 
 .PHONY: test
-test: $(TEST_OUTPUTS)
-	@for b in $(TEST_OUTPUTS); do \
-		echo "--- Running $$b ---"; \
-		$(VM_BIN) $$b; \
-	done
-
-tests/%.u2b: tests/%.u2a $(ASM_BIN)
-	$(ASM_BIN) $< $@
+test:
+	./tests/test.sh
 
 format-dry:
 	find . -regex '.*\.\(c\|h\)$$' -exec clang-format --dry-run --Werror {} +

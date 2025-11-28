@@ -1,0 +1,264 @@
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 1
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 10 (A)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 2
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 4
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 1 (1)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 5
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 5 (5)
+}
+ParsedInstruction {
+	opcode: 14 (cmp)
+	rd: 0
+	rs1: 1
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 18 (jl)
+	rd: 0
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 8 (8)
+}
+ParsedInstruction {
+	opcode: 4 (add)
+	rd: 2
+	rs1: 2
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 14 (cmp)
+	rd: 0
+	rs1: 1
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 19 (jg)
+	rd: 0
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 2 (2)
+}
+ParsedInstruction {
+	opcode: 15 (jmp)
+	rd: 0
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 2 (2)
+}
+ParsedInstruction {
+	opcode: 5 (sub)
+	rd: 2
+	rs1: 2
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 5 (sub)
+	rd: 1
+	rs1: 1
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 15 (jmp)
+	rd: 0
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: -8 (FFFFFFFFFFFFFFF8)
+}
+ParsedInstruction {
+	opcode: 3 (st)
+	rd: 0
+	rs1: 2
+	rs2: 0
+	imm_ext: 0
+	imm: 42 (2A)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 6
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 123 (7B)
+}
+ParsedInstruction {
+	opcode: 0 (mov)
+	rd: 6
+	rs1: 7
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+Added instruction 0 to bb 0
+Added instruction 1 to bb 0
+Added instruction 2 to bb 0
+Added instruction 3 to bb 0
+Added instruction 4 to bb 1
+Added instruction 5 to bb 1
+Added instruction 6 to bb 2
+Added instruction 7 to bb 2
+Added instruction 8 to bb 2
+Added instruction 9 to bb 3
+Added instruction 10 to bb 4
+Added instruction 11 to bb 5
+Added instruction 12 to bb 5
+Added instruction 13 to bb 6
+Added instruction 14 to bb 6
+Added instruction 15 to bb 6
+JumpTable* {
+    count: 4
+    capacity: 16
+    entries: [
+        {
+            target_id 8
+            resolved_target_id 13
+            source_id 5
+        }
+        {
+            target_id 2
+            resolved_target_id 10
+            source_id 8
+        }
+        {
+            target_id 2
+            resolved_target_id 11
+            source_id 9
+        }
+        {
+            target_id -8
+            resolved_target_id 4
+            source_id 12
+        }
+    ]
+}
+
+===== CFG DEBUG =====
+CFG block count: 7
+
+BasicBlock #0
+  leader: 0
+  instructions_count: 4
+    [0] opcode=1 (li) rd=1 rs1=0 rs2=0 imm=10
+    [1] opcode=1 (li) rd=2 rs1=0 rs2=0 imm=0
+    [2] opcode=1 (li) rd=4 rs1=0 rs2=0 imm=1
+    [3] opcode=1 (li) rd=5 rs1=0 rs2=0 imm=5
+  incoming_count: 0
+  outgoing_count: 1
+    outgoing[0] -> leader 4
+  live_in : 0b0000000010000001
+  live_out: 0b0000000010000111
+
+BasicBlock #1
+  leader: 4
+  instructions_count: 2
+    [0] opcode=14 (cmp) rd=0 rs1=1 rs2=0 imm=0
+    [1] opcode=18 (jl) rd=0 rs1=0 rs2=0 imm=8
+  incoming_count: 2
+    incoming[0] -> leader 0
+    incoming[1] -> leader 11
+  outgoing_count: 2
+    outgoing[0] -> leader 13
+    outgoing[1] -> leader 6
+  live_in : 0b0000000010000111
+  live_out: 0b0000000010000111
+
+BasicBlock #2
+  leader: 6
+  instructions_count: 3
+    [0] opcode=4 (add) rd=2 rs1=2 rs2=0 imm=0
+    [1] opcode=14 (cmp) rd=0 rs1=1 rs2=0 imm=0
+    [2] opcode=19 (jg) rd=0 rs1=0 rs2=0 imm=2
+  incoming_count: 1
+    incoming[0] -> leader 4
+  outgoing_count: 2
+    outgoing[0] -> leader 10
+    outgoing[1] -> leader 9
+  live_in : 0b0000000010000111
+  live_out: 0b0000000010000111
+
+BasicBlock #3
+  leader: 9
+  instructions_count: 1
+    [0] opcode=15 (jmp) rd=0 rs1=0 rs2=0 imm=2
+  incoming_count: 1
+    incoming[0] -> leader 6
+  outgoing_count: 1
+    outgoing[0] -> leader 11
+  live_in : 0b0000000010000111
+  live_out: 0b0000000010000111
+
+BasicBlock #4
+  leader: 10
+  instructions_count: 1
+    [0] opcode=5 (sub) rd=2 rs1=2 rs2=0 imm=0
+  incoming_count: 1
+    incoming[0] -> leader 6
+  outgoing_count: 1
+    outgoing[0] -> leader 11
+  live_in : 0b0000000010000111
+  live_out: 0b0000000010000111
+
+BasicBlock #5
+  leader: 11
+  instructions_count: 2
+    [0] opcode=5 (sub) rd=1 rs1=1 rs2=0 imm=0
+    [1] opcode=15 (jmp) rd=0 rs1=0 rs2=0 imm=-8
+  incoming_count: 2
+    incoming[0] -> leader 9
+    incoming[1] -> leader 10
+  outgoing_count: 1
+    outgoing[0] -> leader 4
+  live_in : 0b0000000010000111
+  live_out: 0b0000000010000111
+
+BasicBlock #6
+  leader: 13
+  instructions_count: 3
+    [0] opcode=3 (st) rd=0 rs1=2 rs2=0 imm=42
+    [1] opcode=1 (li) rd=6 rs1=0 rs2=0 imm=123
+    [2] opcode=0 (mov) rd=6 rs1=7 rs2=0 imm=0
+  incoming_count: 1
+    incoming[0] -> leader 4
+  outgoing_count: 0
+  live_in : 0b0000000010000101
+  live_out: 0b0000000000000000
+
+======================
+Instruction 14 (cmp) not implemented yet!

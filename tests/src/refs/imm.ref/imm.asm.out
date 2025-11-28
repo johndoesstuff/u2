@@ -1,0 +1,92 @@
+Found arg: li
+Found arg: r1
+Found arg: 0x6EEFCAFE
+Instruction: 4404000 (32bit ext)
+Imm extension: 6EEFCAFE
+Found arg: li
+Found arg: r1
+Found arg: 0xBEEFCAFE
+Instruction: 4408000 (64bit ext)
+Imm extension: BEEFCAFE
+Imm extension: 0
+Found arg: li
+Found arg: r2
+Found arg: 0xFACEBEEFCAFEFED
+Instruction: 4808000 (64bit ext)
+Imm extension: FCAFEFED
+Imm extension: FACEBEE
+Found arg: li
+Found arg: r3
+Found arg: 10
+Instruction: 4C0000A
+Found arg: li
+Found arg: r4
+Found arg: 0
+Instruction: 5000000
+Found arg: li
+Found arg: r5
+Found arg: -10
+Instruction: 5403FF6
+Found arg: li
+Found arg: r6
+Found arg: -0x6EEFFACE
+Instruction: 5804000 (32bit ext)
+Imm extension: 91100532
+Found arg: li
+Found arg: r6
+Found arg: -0xBEEFFACE
+Instruction: 5808000 (64bit ext)
+Imm extension: 41100532
+Imm extension: FFFFFFFF
+Found arg: li
+Found arg: r7
+Found arg: -0xBEEFFACEDEADED
+Instruction: 5C08000 (64bit ext)
+Imm extension: 31215213
+Imm extension: FF411005
+Found arg: li
+Found arg: r1
+Found arg: 0x6EEFCAFE
+Instruction: 4404000 (32bit ext)
+Imm extension: 6EEFCAFE
+Found arg: li
+Found arg: r1
+Found arg: 0xBEEFCAFE
+Instruction: 4408000 (64bit ext)
+Imm extension: BEEFCAFE
+Imm extension: 0
+Found arg: li
+Found arg: r2
+Found arg: 0xFACEBEEFCAFEFED
+Instruction: 4808000 (64bit ext)
+Imm extension: FCAFEFED
+Imm extension: FACEBEE
+Found arg: li
+Found arg: r3
+Found arg: 10
+Instruction: 4C0000A
+Found arg: li
+Found arg: r4
+Found arg: 0
+Instruction: 5000000
+Found arg: li
+Found arg: r5
+Found arg: -10
+Instruction: 5403FF6
+Found arg: li
+Found arg: r6
+Found arg: -0x6EEFFACE
+Instruction: 5804000 (32bit ext)
+Imm extension: 91100532
+Found arg: li
+Found arg: r6
+Found arg: -0xBEEFFACE
+Instruction: 5808000 (64bit ext)
+Imm extension: 41100532
+Imm extension: FFFFFFFF
+Found arg: li
+Found arg: r7
+Found arg: -0xBEEFFACEDEADED
+Instruction: 5C08000 (64bit ext)
+Imm extension: 31215213
+Imm extension: FF411005

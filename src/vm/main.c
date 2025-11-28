@@ -11,6 +11,10 @@
 
 #include <errno.h>
 
+#include "../common/debug.h"
+
+int DEV_DEBUG = 0;
+
 /**
     U2 VIRTUAL MACHINE
 
@@ -43,7 +47,7 @@ uint32_t next_instruction(FILE* f, uint32_t* inst) {
             return 0;
         } else {
             printf("Error reading instruction\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
     return 1;
@@ -100,10 +104,11 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
                                                          // one shouldn't be
                                                          // expected
             if (!(instructionObj.format & 0b1000)) {     // check imm extension is supported
-                printf("Immediate extension is not supported for"
-                       " instructions of type %s",
-                       instructionObj.name);
-                exit(1);
+                fprintf(stderr,
+                        "Immediate extension is not supported for"
+                        " instructions of type %s",
+                        instructionObj.name);
+                exit(EXIT_FAILURE);
             }
 
             // if rs2 contains 1 or 2 load next rs2 bytes into imm
@@ -112,22 +117,22 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
                 uint32_t imm_ext;
                 int captured = next_instruction(fptr, &imm_ext);
                 if (!captured) {
-                    printf("Expected immediate extension but instead recieved"
-                           " EOF? Check rs2 value for last inst.\n");
+                    fprintf(stderr, "Expected immediate extension but instead recieved"
+                                    " EOF? Check rs2 value for last inst.\n");
                 }
                 immediate = imm_ext;
                 if (rs2 == 2) {
                     parsed->imm_ext = 2;
                     captured = next_instruction(fptr, &imm_ext);
                     if (!captured) {
-                        printf("Expected immediate extension but instead"
-                               " recieved EOF? Check rs2 value for second to"
-                               " last inst.\n");
+                        fprintf(stderr, "Expected immediate extension but instead"
+                                        " recieved EOF? Check rs2 value for second to"
+                                        " last inst.\n");
                     }
                     immediate |= (int64_t)imm_ext << 32;
                 }
             } else {
-                printf("Invalid rs2 value\n");
+                fprintf(stderr, "Invalid rs2 value\n");
             }
         }
         parsed->imm = immediate;
@@ -137,31 +142,31 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
 }
 
 void _DEBUG_parsed_instruction(ParsedInstruction* parsed) {
-    printf("ParsedInstruction {\n");
-    printf("\topcode: %u (%s)\n", parsed->opcode, instruction_from_id(parsed->opcode));
-    printf("\trd: %u\n", parsed->rd);
-    printf("\trs1: %u\n", parsed->rs1);
-    printf("\trs2: %u\n", parsed->rs2);
-    printf("\timm_ext: %u\n", parsed->imm_ext);
-    printf("\timm: %ld (%lX)\n", parsed->imm, parsed->imm);
-    printf("}\n");
+    printf_DEBUG("ParsedInstruction {\n");
+    printf_DEBUG("\topcode: %u (%s)\n", parsed->opcode, instruction_from_id(parsed->opcode));
+    printf_DEBUG("\trd: %u\n", parsed->rd);
+    printf_DEBUG("\trs1: %u\n", parsed->rs1);
+    printf_DEBUG("\trs2: %u\n", parsed->rs2);
+    printf_DEBUG("\timm_ext: %u\n", parsed->imm_ext);
+    printf_DEBUG("\timm: %ld (%lX)\n", parsed->imm, parsed->imm);
+    printf_DEBUG("}\n");
 }
 
 void _DEBUG_jump_table(JumpTable* jt) {
-    printf("JumpTable* {\n");
-    printf("    count: %lu\n", jt->count);
-    printf("    capacity: %lu\n", jt->capacity);
-    printf("    entries: [\n");
+    printf_DEBUG("JumpTable* {\n");
+    printf_DEBUG("    count: %lu\n", jt->count);
+    printf_DEBUG("    capacity: %lu\n", jt->capacity);
+    printf_DEBUG("    entries: [\n");
     for (size_t i = 0; i < jt->count; i++) {
         JumpTableEntry* jte = jt->entries[i];
-        printf("        {\n");
-        printf("            target_id %ld\n", (int64_t)jte->target_id);
-        printf("            resolved_target_id %lu\n", jte->resolved_target_id);
-        printf("            source_id %lu\n", jte->source_id);
-        printf("        }\n");
+        printf_DEBUG("        {\n");
+        printf_DEBUG("            target_id %ld\n", (int64_t)jte->target_id);
+        printf_DEBUG("            resolved_target_id %lu\n", jte->resolved_target_id);
+        printf_DEBUG("            source_id %lu\n", jte->source_id);
+        printf_DEBUG("        }\n");
     }
-    printf("    ]\n");
-    printf("}\n");
+    printf_DEBUG("    ]\n");
+    printf_DEBUG("}\n");
 }
 
 void print_bitmask(uint16_t mask) {
@@ -170,58 +175,60 @@ void print_bitmask(uint16_t mask) {
 }
 
 void _DEBUG_cfg(CFG* cfg) {
-    printf("\n===== CFG DEBUG =====\n");
-    printf("CFG block count: %lu\n", cfg->count);
+    printf_DEBUG("\n===== CFG DEBUG =====\n");
+    printf_DEBUG("CFG block count: %lu\n", cfg->count);
 
     for (size_t bi = 0; bi < cfg->count; bi++) {
         BasicBlock* bb = cfg->nodes[bi];
 
-        printf("\nBasicBlock #%lu\n", bi);
-        printf("  leader: %lu\n", bb->leader);
-        printf("  instructions_count: %lu\n", bb->instructions_count);
+        printf_DEBUG("\nBasicBlock #%lu\n", bi);
+        printf_DEBUG("  leader: %lu\n", bb->leader);
+        printf_DEBUG("  instructions_count: %lu\n", bb->instructions_count);
 
         // Print instructions inside block
         for (size_t ii = 0; ii < bb->instructions_count; ii++) {
             ParsedInstruction* inst = bb->instructions[ii];
             if (!inst) {
-                printf("    [%lu] NULL instruction!!\n", ii);
+                printf_DEBUG("    [%lu] NULL instruction!!\n", ii);
                 continue;
             }
-            printf("    [%lu] opcode=%u (%s) rd=%u rs1=%u rs2=%u imm=%ld\n", ii, inst->opcode,
-                   instruction_from_id(inst->opcode), inst->rd, inst->rs1, inst->rs2, inst->imm);
+            printf_DEBUG("    [%lu] opcode=%u (%s) rd=%u rs1=%u rs2=%u imm=%ld\n", ii, inst->opcode,
+                         instruction_from_id(inst->opcode), inst->rd, inst->rs1, inst->rs2, inst->imm);
         }
 
         // Print incoming edges
-        printf("  incoming_count: %lu\n", bb->incoming_count);
+        printf_DEBUG("  incoming_count: %lu\n", bb->incoming_count);
         for (size_t ic = 0; ic < bb->incoming_count; ic++) {
             BasicBlock* in = bb->incoming[ic];
             if (!in) {
-                printf("    incoming[%lu] = NULL (error)\n", ic);
+                printf_DEBUG("    incoming[%lu] = NULL (error)\n", ic);
                 continue;
             }
-            printf("    incoming[%lu] -> leader %lu\n", ic, in->leader);
+            printf_DEBUG("    incoming[%lu] -> leader %lu\n", ic, in->leader);
         }
 
         // Print outgoing edges
-        printf("  outgoing_count: %lu\n", bb->outgoing_count);
+        printf_DEBUG("  outgoing_count: %lu\n", bb->outgoing_count);
         for (size_t oc = 0; oc < bb->outgoing_count; oc++) {
             BasicBlock* out = bb->outgoing[oc];
             if (!out) {
-                printf("    outgoing[%lu] = NULL (error)\n", oc);
+                printf_DEBUG("    outgoing[%lu] = NULL (error)\n", oc);
                 continue;
             }
-            printf("    outgoing[%lu] -> leader %lu\n", oc, out->leader);
+            printf_DEBUG("    outgoing[%lu] -> leader %lu\n", oc, out->leader);
         }
 
         // Print live_in and live_out
-        printf("  live_in : 0b");
-        print_bitmask(bb->live_in);
-        printf("\n");
-        printf("  live_out: 0b");
-        print_bitmask(bb->live_out);
-        printf("\n");
+        printf_DEBUG("  live_in : 0b");
+        if (DEV_DEBUG)
+            print_bitmask(bb->live_in);
+        printf_DEBUG("\n");
+        printf_DEBUG("  live_out: 0b");
+        if (DEV_DEBUG)
+            print_bitmask(bb->live_out);
+        printf_DEBUG("\n");
     }
-    printf("\n======================\n");
+    printf_DEBUG("\n======================\n");
 }
 
 void cfg_pass(ParsedInstruction* parsed, Context* context) {
@@ -265,14 +272,42 @@ void free_context(Context* context) {
 }
 
 int main(int argc, char** argv) {
-    // correct usage check
-    if (argc < 2) {
-        printf("Usage: u2vm bytecode.u2b\n");
-        exit(1);
+    DEV_DEBUG = 0;
+    char* bytecodePath = NULL;
+
+    // parse args
+    for (int i = 1; i < argc; i++) {
+        char* arg = argv[i];
+
+        if (arg[0] == '-') {
+            // flags
+            if (strcmp(arg, "--dev") == 0) {
+                DEV_DEBUG = 1;
+            } else {
+                fprintf(stderr, "Unknown flag: %s\n", arg);
+                fprintf(stderr, "Usage: u2vm [flags] bytecode.u2b\n");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            // file
+            if (bytecodePath == NULL) {
+                bytecodePath = arg;
+            } else {
+                fprintf(stderr, "Too many arguments.\n");
+                fprintf(stderr, "Usage: u2vm [flags] bytecode.u2b\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    // does file exist??
+    if (bytecodePath == NULL) {
+        fprintf(stderr, "Missing bytecode file.\n");
+        fprintf(stderr, "Usage: u2vm [--dev] bytecode.u2b\n");
+        exit(EXIT_FAILURE);
     }
 
     // try to open file
-    char* bytecodePath = argv[1];
     FILE* bytecodeFile = fopen(bytecodePath, "rb");
     if (bytecodeFile == NULL) {
         fprintf(stderr, "Error opening file '%s': %s\n", bytecodePath, strerror(errno));
@@ -286,8 +321,8 @@ int main(int argc, char** argv) {
                              -1,  // fd
                              0);  // offset
     if (jit_base == MAP_FAILED) {
-        printf("Could not allocate memory for jit compilation!\n");
-        exit(1);
+        fprintf(stderr, "Could not allocate memory for jit compilation!\n");
+        exit(EXIT_FAILURE);
     }
     uint8_t* jit_advance = jit_base;
     uint8_t** jit_memory = &jit_advance;
@@ -320,17 +355,17 @@ int main(int argc, char** argv) {
     // dump machine code because god knows im not getting this right my first
     // try or my second or third or fourth
     size_t emitted_size = *jit_memory - jit_base;
-    printf("===== x86 dump =====\n");
+    printf_DEBUG("===== x86 dump =====\n");
     for (size_t i = 0; i < emitted_size; i++) {
-        printf("%02X ", (unsigned char)jit_base[i]);
+        printf_DEBUG("%02X ", (unsigned char)jit_base[i]);
     }
-    printf("\n\n");
+    printf_DEBUG("\n\n");
 
     // try to execute jit memory
     uint64_t (*func)() = (uint64_t(*)())jit_base;
     uint64_t result = func();
 
-    printf("%" PRIX64 "\n", result);
+    printf_DEBUG("%" PRIX64 "\n", result);
 
     fclose(bytecodeFile);
     free_context(context);

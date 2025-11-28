@@ -47,7 +47,7 @@ void emit_mov(uint8_t** jit_memory, uint32_t rd, uint32_t rs1) {
         emit_x86instruction(jit_memory, &__mov_rm64_r64, dst, src, 0);
     } else {
         printf("TODO: implement this lol\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // TODO: implement spill
@@ -66,7 +66,7 @@ void emit_li(uint8_t** jit_memory, uint32_t rd, uint64_t imm) {
         }
     } else {
         printf("TODO: implement this aswell\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -199,6 +199,6 @@ void emit_jit(uint8_t** jit_memory, uint32_t opcode, uint32_t rd, uint32_t rs1, 
         break;
     default:
         printf("Instruction %u (%s) not implemented yet!\n", op, instruction_from_id(op));
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }

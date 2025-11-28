@@ -1,0 +1,113 @@
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 1
+	rs1: 0
+	rs2: 1
+	imm_ext: 1
+	imm: 1861208830 (6EEFCAFE)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 1
+	rs1: 0
+	rs2: 2
+	imm_ext: 2
+	imm: 3203386110 (BEEFCAFE)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 2
+	rs1: 0
+	rs2: 2
+	imm_ext: 2
+	imm: 1129537018237284333 (FACEBEEFCAFEFED)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 3
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 10 (A)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 4
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: 0 (0)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 5
+	rs1: 0
+	rs2: 0
+	imm_ext: 0
+	imm: -10 (FFFFFFFFFFFFFFF6)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 6
+	rs1: 0
+	rs2: 1
+	imm_ext: 1
+	imm: 2433746226 (91100532)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 6
+	rs1: 0
+	rs2: 2
+	imm_ext: 2
+	imm: -3203398350 (FFFFFFFF41100532)
+}
+ParsedInstruction {
+	opcode: 1 (li)
+	rd: 7
+	rs1: 0
+	rs2: 2
+	imm_ext: 2
+	imm: -53744106066587117 (FF41100531215213)
+}
+Added instruction 0 to bb 0
+Added instruction 1 to bb 0
+Added instruction 2 to bb 0
+Added instruction 3 to bb 0
+Added instruction 4 to bb 0
+Added instruction 5 to bb 0
+Added instruction 6 to bb 0
+Added instruction 7 to bb 0
+Added instruction 8 to bb 0
+JumpTable* {
+    count: 0
+    capacity: 16
+    entries: [
+    ]
+}
+
+===== CFG DEBUG =====
+CFG block count: 1
+
+BasicBlock #0
+  leader: 0
+  instructions_count: 9
+    [0] opcode=1 (li) rd=1 rs1=0 rs2=1 imm=1861208830
+    [1] opcode=1 (li) rd=1 rs1=0 rs2=2 imm=3203386110
+    [2] opcode=1 (li) rd=2 rs1=0 rs2=2 imm=1129537018237284333
+    [3] opcode=1 (li) rd=3 rs1=0 rs2=0 imm=10
+    [4] opcode=1 (li) rd=4 rs1=0 rs2=0 imm=0
+    [5] opcode=1 (li) rd=5 rs1=0 rs2=0 imm=-10
+    [6] opcode=1 (li) rd=6 rs1=0 rs2=1 imm=2433746226
+    [7] opcode=1 (li) rd=6 rs1=0 rs2=2 imm=-3203398350
+    [8] opcode=1 (li) rd=7 rs1=0 rs2=2 imm=-53744106066587117
+  incoming_count: 0
+  outgoing_count: 0
+  live_in : 0b0000000000000000
+  live_out: 0b0000000000000000
+
+======================
+===== x86 dump =====
+48 81 EC 80 00 00 00 B8 FE CA EF 6E B8 FE CA EF BE 48 B8 ED EF AF FC EE EB AC 0F B8 0A 00 00 00 B8 00 00 00 00 48 B8 F6 FF FF FF FF FF FF FF B8 32 05 10 91 48 B8 32 05 10 41 FF FF FF FF 48 B8 13 52 21 31 05 10 41 FF 48 81 C4 80 00 00 00 48 89 C0 C3 
+
+FF41100531215213
