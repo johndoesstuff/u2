@@ -5,7 +5,7 @@ Instruction Instructions[] = {
     [U2_MOV] = {0b0011, "mov"},  // copy rs1 to rd
     [U2_LI] = {0b1001, "li"},    // load immediate to rd
     [U2_LD] = {0b1011, "ld"},    // load memory to rd
-				 // TODO: how tf is memory going to work???
+                                 // TODO: how tf is memory going to work???
     [U2_ST] = {0b1110, "st"},    // store to memory from rs1
 
     // ARITHMETIC
@@ -26,8 +26,8 @@ Instruction Instructions[] = {
 
     // COMPARISON
     [U2_CMP] = {0b0110, "cmp"},  // compare registers (TODO: figure out wtf
-				 // that means and how the hell im going to
-				 // implement special registers)
+                                 // that means and how the hell im going to
+                                 // implement special registers)
 
     // CONTROL
     [U2_JMP] = {0b1000, "jmp"},  // jump to relative imm

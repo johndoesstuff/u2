@@ -46,8 +46,8 @@ tests/%.u2b: tests/%.u2a $(ASM_BIN)
 	$(ASM_BIN) $< $@
 
 format-dry:
-	find . -regex '.*\.\(c\|h\)$$' -exec clang-format-18 --dry-run --Werror {} +
+	find . -regex '.*\.\(c\|h\)$$' -exec clang-format --dry-run --Werror {} +
 
 format:
-	find . -regex '.*\.\(c\|h\)$$' -exec clang-format-18 -i {} +
+	find . -regex '.*\.\(c\|h\)$$' -exec clang-format -i {} +
 

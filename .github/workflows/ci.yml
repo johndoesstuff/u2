@@ -16,7 +16,7 @@ jobs:
 
       # 2. Install dependencies
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y gcc make clang-format-18
+        run: sudo apt-get update && sudo apt-get install -y gcc make clang-format
 
       # 3. Run formatting check
       - name: Check formatting

@@ -293,26 +293,26 @@ asm_pass:
         Instruction instruction = Instructions[opcode];
         if (__builtin_popcount(instruction.format) != opargsc - 1) {
             error_argnum(__builtin_popcount(instruction.format), opargsc - 1, instruction.name, linec);
-	}
+        }
 
         uint32_t rd = 0;
         uint32_t rs1 = 0;
         uint32_t rs2 = 0;
         int64_t imm = 0;
 
-	size_t opargsi = 1;
+        size_t opargsi = 1;
         if (instruction.format & 0b0001) {
             rd = expect_register(opargs[opargsi++]);
         }
         if (instruction.format & 0b0010) {
             rs1 = expect_register(opargs[opargsi++]);
-	}
+        }
         if (instruction.format & 0b0100) {
             rs2 = expect_register(opargs[opargsi++]);
-	}
+        }
         if (instruction.format & 0b1000) {
             imm = expect_immediate(opargs[opargsi++], labels, pass, pc);
-	}
+        }
 
         // generate bytecode, technically we dont have to do this if we are in
         // pass 1 but like.. who cares.. we will just rewind() and overwrite
@@ -344,14 +344,14 @@ asm_pass:
 
         // check for long immediates
         if (imm_size) {
-	    set_imm(&instBC, 0);  // set immediate to 0 for clarity (extended
-				  // imm means imm will not be read from this
-				  // instruction)
-	    // check imm extension is supported
-	    if (instruction.format & 0b0100 || !(instruction.format & 0b1000)) {  
-		printf("Invalid Immediate extension format!\n");
-	        exit(1);
-	    }
+            set_imm(&instBC, 0);  // set immediate to 0 for clarity (extended
+                                  // imm means imm will not be read from this
+                                  // instruction)
+            // check imm extension is supported
+            if (instruction.format & 0b0100 || !(instruction.format & 0b1000)) {
+                printf("Invalid Immediate extension format!\n");
+                exit(1);
+            }
             printf("Instruction: %X (%dbit ext)\n", instBC, 32 * imm_size);
             emit_inst(instBC, bcFile, &pc);
             int32_t imm_ext = (int32_t)(imm & 0xFFFFFFFF);

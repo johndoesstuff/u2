@@ -9,7 +9,7 @@
 
 /**
  * InstructionFormat has 4 relevant bits, from 0-3 containing information about
- * which parts of the 32bit instruction are expected. 
+ * which parts of the 32bit instruction are expected.
  *
  * bit 0 -> rd: will the instruction store information in a register?
  *

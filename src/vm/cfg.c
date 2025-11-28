@@ -319,15 +319,15 @@ uint16_t live_in_from_bb(BasicBlock* bb) {
     for (size_t i = 0; i < bb->instructions_count; i++) {
         ParsedInstruction* instruction = instructions[i];
         InstructionFormat f = instruction->obj.format;
-	if (f & (1 << 2)) { // expects rs2
+        if (f & (1 << 2)) {  // expects rs2
             if (!(defined & (1 << instruction->rs2)))
                 live_in |= 1 << instruction->rs2;
-	}
-	if (f & (1 << 1)) { // expects rs1
+        }
+        if (f & (1 << 1)) {  // expects rs1
             if (!(defined & (1 << instruction->rs1)))
                 live_in |= 1 << instruction->rs1;
-	}
-	if (f & (1 << 0)) { // defines rd
+        }
+        if (f & (1 << 0)) {  // defines rd
             defined |= 1 << instruction->rd;
         }
     }
@@ -350,7 +350,7 @@ uint16_t defined_in_bb(BasicBlock* bb) {
     for (size_t i = 0; i < bb->instructions_count; i++) {
         ParsedInstruction* instruction = instructions[i];
         InstructionFormat f = instruction->obj.format;
-	if (f & (1 << 0)) { // defines rd
+        if (f & (1 << 0)) {  // defines rd
             defined |= 1 << instruction->rd;
         }
     }
