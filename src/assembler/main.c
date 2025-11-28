@@ -291,73 +291,28 @@ asm_pass:
 
         // correct format?
         Instruction instruction = Instructions[opcode];
-        switch (instruction.format) {
-        case FORMAT_F:
-            if (opargsc != 4)
-                error_argnum(opargsc, 4, instruction.name, linec);
-            break;
-        case FORMAT_M:
-            if (opargsc != 4)
-                error_argnum(opargsc, 4, instruction.name, linec);
-            break;
-        case FORMAT_R:
-            if (opargsc != 3)
-                error_argnum(opargsc, 3, instruction.name, linec);
-            break;
-        case FORMAT_I:
-            if (opargsc != 3)
-                error_argnum(opargsc, 3, instruction.name, linec);
-            break;
-        case FORMAT_J:
-            if (opargsc != 2)
-                error_argnum(opargsc, 2, instruction.name, linec);
-            break;
-        case FORMAT_D:
-            if (opargsc != 2)
-                error_argnum(opargsc, 2, instruction.name, linec);
-            break;
-        case FORMAT_NONE:
-            if (opargsc != 1)
-                error_argnum(opargsc, 1, instruction.name, linec);
-            break;
-        }
+        if (__builtin_popcount(instruction.format) != opargsc - 1) {
+            error_argnum(__builtin_popcount(instruction.format), opargsc - 1, instruction.name, linec);
+	}
 
         uint32_t rd = 0;
         uint32_t rs1 = 0;
         uint32_t rs2 = 0;
         int64_t imm = 0;
 
-        switch (instruction.format) {
-        case FORMAT_F:
-            rd = expect_register(opargs[1]);
-            rs1 = expect_register(opargs[2]);
-            rs2 = expect_register(opargs[3]);
-            break;
-        case FORMAT_M:
-            rd = expect_register(opargs[1]);
-            rs1 = expect_register(opargs[2]);
-            imm = expect_immediate(opargs[3], labels, pass, pc);
-            break;
-        case FORMAT_R:
-            rd = expect_register(opargs[1]);
-            rs1 = expect_register(opargs[2]);
-            break;
-        case FORMAT_I:
-            rd = expect_register(opargs[1]);
-            imm = expect_immediate(opargs[2], labels, pass, pc);
-            break;
-        case FORMAT_J:
-            imm = expect_immediate(opargs[1], labels, pass, pc);
-            break;
-        case FORMAT_D:
-            rd = expect_register(opargs[1]);
-            break;
-        case FORMAT_NONE:
-            break;
-        default:
-            printf("Internal Error: Unknown Instruction format\n");
-            exit(1);
+	size_t opargsi = 1;
+        if (instruction.format & 0b0001) {
+            rd = expect_register(opargs[opargsi++]);
         }
+        if (instruction.format & 0b0010) {
+            rs1 = expect_register(opargs[opargsi++]);
+	}
+        if (instruction.format & 0b0100) {
+            rs2 = expect_register(opargs[opargsi++]);
+	}
+        if (instruction.format & 0b1000) {
+            imm = expect_immediate(opargs[opargsi++], labels, pass, pc);
+	}
 
         // generate bytecode, technically we dont have to do this if we are in
         // pass 1 but like.. who cares.. we will just rewind() and overwrite
@@ -389,19 +344,14 @@ asm_pass:
 
         // check for long immediates
         if (imm_size) {
-            set_imm(&instBC, 0);           // set immediate to 0 for clarity (extended
-                                           // imm means imm will not be read from this
-                                           // instruction)
-            switch (instruction.format) {  // check imm extension is supported
-            case FORMAT_J:
-            case FORMAT_I:
-            case FORMAT_M:
-                break;
-            default:
-                printf("If you are seeing this something has gone seriously"
-                       " wrong and it's probably my fault.\n");
-                exit(1);
-            }
+	    set_imm(&instBC, 0);  // set immediate to 0 for clarity (extended
+				  // imm means imm will not be read from this
+				  // instruction)
+	    // check imm extension is supported
+	    if (instruction.format & 0b0100 || !(instruction.format & 0b1000)) {  
+		printf("Invalid Immediate extension format!\n");
+	        exit(1);
+	    }
             printf("Instruction: %X (%dbit ext)\n", instBC, 32 * imm_size);
             emit_inst(instBC, bcFile, &pc);
             int32_t imm_ext = (int32_t)(imm & 0xFFFFFFFF);

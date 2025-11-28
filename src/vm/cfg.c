@@ -318,21 +318,17 @@ uint16_t live_in_from_bb(BasicBlock* bb) {
     uint16_t defined = 0;
     for (size_t i = 0; i < bb->instructions_count; i++) {
         ParsedInstruction* instruction = instructions[i];
-        switch (instruction->obj.format) {
-        case FORMAT_F:
+        InstructionFormat f = instruction->obj.format;
+	if (f & (1 << 2)) { // expects rs2
             if (!(defined & (1 << instruction->rs2)))
                 live_in |= 1 << instruction->rs2;
-            __attribute__((fallthrough));  // tell GCC we want to fall through
-        case FORMAT_M:
-        case FORMAT_R:
+	}
+	if (f & (1 << 1)) { // expects rs1
             if (!(defined & (1 << instruction->rs1)))
                 live_in |= 1 << instruction->rs1;
-            __attribute__((fallthrough));
-        case FORMAT_I:
-        case FORMAT_D:
+	}
+	if (f & (1 << 0)) { // defines rd
             defined |= 1 << instruction->rd;
-        default:
-            break;
         }
     }
     return live_in;
@@ -353,7 +349,8 @@ uint16_t defined_in_bb(BasicBlock* bb) {
     uint16_t defined = 0;
     for (size_t i = 0; i < bb->instructions_count; i++) {
         ParsedInstruction* instruction = instructions[i];
-        if (instruction->obj.format != FORMAT_NONE || instruction->obj.format != FORMAT_J) {
+        InstructionFormat f = instruction->obj.format;
+	if (f & (1 << 0)) { // defines rd
             defined |= 1 << instruction->rd;
         }
     }

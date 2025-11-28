@@ -7,15 +7,19 @@
 
 #include <stdint.h>
 
-typedef enum {
-    FORMAT_F,     // 3 register :                      ins rd rs1 rs2
-    FORMAT_M,     // register to register + offset :   ins rd rs1 im
-    FORMAT_R,     // register to register :            ins rd rs1
-    FORMAT_I,     // immediate to register :           ins rd im
-    FORMAT_J,     // immediate opcode :                ins im
-    FORMAT_D,     // register opcode :                 ins rd
-    FORMAT_NONE,  // opcode :                          ins
-} InstructionFormat;
+/**
+ * InstructionFormat has 4 relevant bits, from 0-3 containing information about
+ * which parts of the 32bit instruction are expected. 
+ *
+ * bit 0 -> rd: will the instruction store information in a register?
+ *
+ * bit 1 -> rs1: will the instruction require a register argument?
+ *
+ * bit 2 -> rs2: will the instruction require a second register argument?
+ *
+ * bit 3 -> immediate: will the instruction require a constant value?
+ */
+typedef uint8_t InstructionFormat;
 
 typedef struct {
     InstructionFormat format;

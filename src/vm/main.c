@@ -96,15 +96,10 @@ void do_pass(void (*pass_eval)(ParsedInstruction*, Context*), Context* context, 
         parsed->obj = instructionObj;
 
         // check for long immediates
-        if (rs2 && instructionObj.format != FORMAT_F) {  // value in rs2 when
+        if (rs2 && !(instructionObj.format & 0b0100)) {  // value in rs2 when
                                                          // one shouldn't be
                                                          // expected
-            switch (instructionObj.format) {             // check imm extension is supported
-            case FORMAT_J:
-            case FORMAT_I:
-            case FORMAT_M:
-                break;
-            default:
+            if (!(instructionObj.format & 0b1000)) {     // check imm extension is supported
                 printf("Immediate extension is not supported for"
                        " instructions of type %s",
                        instructionObj.name);
