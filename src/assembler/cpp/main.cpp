@@ -7,7 +7,7 @@ struct AssemblerFlags {
 	bool dev_debug = false;
 };
 
-void usage(std::iostream& s) {
+void usage(std::ostream& s) {
 	s << "Usage: u2asm [flags] assembly.u2a bytecode.u2b" << std::endl;
 }
 
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 				bc_path = arg;
 			} else {
 				std::cerr << "Too many arguments." << std::endl;
-				usage(std:cerr);
+				usage(std::cerr);
 				exit(EXIT_FAILURE);
 			}
 		}

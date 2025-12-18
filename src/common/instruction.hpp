@@ -63,7 +63,7 @@ class ParsedInstruction {
 };
 
 inline constexpr Instruction INSTRUCTION_SET[] = {
-    // DATA
+    /* ===== DATA ===== */
 	/* MOV */ {make_format({
 			InstructionFormat::Rd,
 			InstructionFormat::Rs1,
@@ -83,8 +83,7 @@ inline constexpr Instruction INSTRUCTION_SET[] = {
 			InstructionFormat::Rs2,
 			InstructionFormat::Imm,
 			}), "st"},    // store to memory from rs1
-
-    // ARITHMETIC
+	/* ===== Arithmetic ===== */
     /* ADD */ {make_format({
 			InstructionFormat::Rd,
 			InstructionFormat::Rs1,
@@ -105,8 +104,7 @@ inline constexpr Instruction INSTRUCTION_SET[] = {
 			InstructionFormat::Rs1,
 			InstructionFormat::Rs2,
 			}), "div"},  // divide rs1 and rs2 and store in rd
-
-    // BITWISE
+    /* ===== BITWISE ===== */
     /* AND */ {make_format({
 			InstructionFormat::Rd,
 			InstructionFormat::Rs1,
@@ -126,8 +124,7 @@ inline constexpr Instruction INSTRUCTION_SET[] = {
 			InstructionFormat::Rd,
 			InstructionFormat::Rs1,
 			}), "not"},  // not rs1 and store in rd
-
-    // BITWISE SHIFT
+    /* ===== BITWISE SHIFT ===== */
     /* SHL */ {make_format({
 			InstructionFormat::Rd,
 			InstructionFormat::Rs1,
@@ -138,16 +135,14 @@ inline constexpr Instruction INSTRUCTION_SET[] = {
 			InstructionFormat::Rs1,
 			InstructionFormat::Imm,
 			}), "shr"},  // shift rs1 right by imm and store in rd
-
-    // COMPARISON
+    /* ===== COMPARISON ===== */
     /* CMP */ {make_format({
 			InstructionFormat::Rs1,
 			InstructionFormat::Rs2,
 			}), "cmp"},  // compare registers (TODO: figure out wtf
                          // that means and how the hell im going to
                          // implement special registers)
-
-    // CONTROL
+    /* ===== CONTROL ===== */
     /* JMP */ {make_format({
 			InstructionFormat::Imm,
 			}), "jmp"},  // jump to relative imm
