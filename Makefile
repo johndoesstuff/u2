@@ -1,10 +1,12 @@
-
 CC       = gcc
+CXX      = g++
 CFLAGS   = -g3 -Wall -Wextra -Werror
 
-COMMON   = src/common/instruction.c
+COMMON   = src/common/instruction.cpp
 VM_SRC   = src/vm/cfg.c src/vm/x86encoding.c src/vm/regalloc.c src/vm/x86jit.c src/vm/main.c
 ASM_SRC  = src/assembler/main.c
+
+ASM_CPP_SRC = src/assembler/cpp/main.cpp
 
 VIM_SRC  = src/common/u2a.vim
 
@@ -22,9 +24,9 @@ $(VM_BIN): $(COMMON) $(VM_SRC)
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON) $(VM_SRC) -o $(VM_BIN)
 
-$(ASM_BIN): $(COMMON) $(ASM_SRC)
+$(ASM_BIN): $(COMMON) $(ASM_CPP_SRC)
 	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(COMMON) $(ASM_SRC) -o $(ASM_BIN)
+	$(CXX) $(CFLAGS) $(COMMON) $(ASM_CPP_SRC) -o $(ASM_BIN)
 
 clean:
 	rm -rf $(BUILD_DIR)
