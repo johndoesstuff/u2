@@ -4,6 +4,8 @@
 #include <fstream>
 #include <cstdlib>
 
+#include "parser.hpp"
+
 struct AssemblerFlags {
 	bool dev_debug = false;
 };
