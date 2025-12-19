@@ -3,7 +3,7 @@
 
 #include <string>
 #include <string_view>
-#include <istream>
+#include <iostream>
 #include <cstdint>
 #include "../../common/instruction.hpp"
 
@@ -60,5 +60,10 @@ private:
 	size_t lineno_ = 0;
 	size_t colno_ = 0;
 };
+
+// debug operators
+std::ostream& operator<<(std::ostream& os, const ParsedLabel& p);
+std::ostream& operator<<(std::ostream& os, const ParsedInstruction& p);
+std::ostream& operator<<(std::ostream& os, const ParsedLine& p);
 
 #endif

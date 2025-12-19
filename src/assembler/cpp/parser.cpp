@@ -1,5 +1,6 @@
 #include <string>
 #include <stdexcept>
+#include <iostream>
 
 #include "../../common/instruction.hpp"
 #include "parser.hpp"
@@ -13,6 +14,23 @@ static void parse_error(const std::string& err, size_t lineno, size_t colno) {
 	throw std::runtime_error("Parse error on line " + std::to_string(lineno) + ":" + std::to_string(colno) + "\n" + err);
 }
 
+std::ostream& operator<<(std::ostream& os, const ParsedLabel& p) {
+	return os << p.identifier;
+}
+
+std::ostream& operator<<(std::ostream& os, const ParsedInstruction& p) {
+	return os << p.opcode;
+}
+
+std::ostream& operator<<(std::ostream& os, const ParsedLine& p) {
+	os << "ParsedLine: { ";
+	os << "type: ";
+	if (p.type == LineType::eof) return os << "eof }";
+	else if (p.type == LineType::label) os << "label: " << p.label;
+	else if (p.type == LineType::instruction) os << "instruction: " << p.instruction;
+	return os << ", lineno: " << p.lineno << " }";
+}
+
 ParsedLine Parser::parse_line() {
 	ParsedLine p{};
 	if (!std::getline(in_, line_storage_)) {
@@ -22,6 +40,7 @@ ParsedLine Parser::parse_line() {
 	line_ = line_storage_;
 	lineno_++;
 	colno_ = 0;
+	p.lineno = lineno_;
 	consume_whitespace();
 	std::string_view op = consume_opcode();
 	if (op.empty()) {
@@ -33,6 +52,11 @@ ParsedLine Parser::parse_line() {
 			err_string += label;
 			parse_error(err_string, lineno_, colno_);
 		}
+		p.type = LineType::label;
+		p.label = ParsedLabel {label};
+	} else {
+		p.type = LineType::instruction;
+		p.instruction.opcode = opcode_from_str(op);
 	}
 	return p;
 }

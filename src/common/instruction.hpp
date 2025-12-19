@@ -163,6 +163,15 @@ constexpr const Instruction& instruction_from_opcode(Opcode op) {
 	return INSTRUCTION_SET[to_index(op)];
 }
 
+constexpr int opcode_from_str(std::string_view st) {
+	for (size_t i = 0; i < INSTRUCTION_COUNT; i++) {
+		if (INSTRUCTION_SET[i].name == st) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 // very important that opcodes match instruction set
 static_assert(
     sizeof(INSTRUCTION_SET) / sizeof(INSTRUCTION_SET[0]) ==

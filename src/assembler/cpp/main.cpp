@@ -68,5 +68,9 @@ int main(int argc, char* argv[]) {
 
 	std::string line;
 	Parser asm_parser(asm_file);
-	(void)out;
+	ParsedLine p_line = asm_parser.parse_line();
+	while (p_line.type != LineType::eof) {
+		(*out) << p_line << std::endl;
+		p_line = asm_parser.parse_line();
+	}
 }
