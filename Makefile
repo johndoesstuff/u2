@@ -6,7 +6,7 @@ COMMON   = src/common/instruction.c
 VM_SRC   = src/vm/cfg.c src/vm/x86encoding.c src/vm/regalloc.c src/vm/x86jit.c src/vm/main.c
 ASM_SRC  = src/assembler/main.c
 
-ASM_CPP_SRC = src/assembler/cpp/main.cpp
+ASM_CPP_SRC = src/assembler/cpp/main.cpp src/assembler/cpp/parser.cpp
 
 VIM_SRC  = src/common/u2a.vim
 

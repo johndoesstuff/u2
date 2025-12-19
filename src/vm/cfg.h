@@ -1,6 +1,9 @@
 #ifndef CFG_H
 #define CFG_H
 
+#define MAX_PREGS 7
+#define MAX_VREGS 16
+
 /*
  * cfg.h
  *
@@ -17,6 +20,11 @@
 // jump values and the indexing of instructions. This is a problem for way off
 // in the future though as we wont start to see any side effects until using
 // values above INT_MAX.
+
+typedef struct {
+    int vreg_to_preg[MAX_VREGS];  // -1 = unassigned
+    int preg_to_vreg[MAX_PREGS];  // -1 = free
+} RegMap;
 
 typedef struct BasicBlock {
     // instructions encapsulated
@@ -40,6 +48,10 @@ typedef struct BasicBlock {
     // liveness bitmasks
     uint16_t live_in;
     uint16_t live_out;
+
+    // register mapping
+    RegMap* map_in;
+    RegMap* map_out;
 } BasicBlock;
 
 typedef struct {
@@ -80,5 +92,8 @@ JumpTable* jumptable_from_parsed_array(ParsedArray* parsed_array);
 LeaderSet* generate_leaders(ParsedArray* parsed_array, JumpTable* jump_table);
 CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls);
 void compute_liveness(CFG* cfg);
+
+void allocate_block(BasicBlock* bb);
+void fix_edges(CFG* cfg);
 
 #endif

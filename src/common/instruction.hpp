@@ -52,16 +52,6 @@ struct Instruction {
 	std::string_view name;
 } typedef Instruction;
 
-class ParsedInstruction {
-    uint32_t opcode;
-    uint32_t rd;
-    uint32_t rs1;
-    uint32_t rs2;
-    uint32_t imm_ext;
-    uint64_t imm;
-    Instruction obj;
-};
-
 inline constexpr Instruction INSTRUCTION_SET[] = {
     /* ===== DATA ===== */
 	/* MOV */ {make_format({
@@ -167,9 +157,9 @@ constexpr size_t to_index(Opcode op) {
     return static_cast<size_t>(op);
 }
 
-inline constexpr INSTRUCTION_COUNT = sizeof(INSTRUCTION_SET) / sizeof(INSTRUCTION_SET[0]);
+constexpr int INSTRUCTION_COUNT = sizeof(INSTRUCTION_SET) / sizeof(INSTRUCTION_SET[0]);
 
-constexpr Instruction& instruction_from_opcode(Opcode op) {
+constexpr const Instruction& instruction_from_opcode(Opcode op) {
 	return INSTRUCTION_SET[to_index(op)];
 }
 

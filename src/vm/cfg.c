@@ -278,7 +278,7 @@ CFG* build_cfg(ParsedArray* pa, JumpTable* jt, LeaderSet* ls) {
         uint64_t pc_end = bb->leader + bb->instructions_count - 1;  // pc of li
 
         if (!li) {
-            printf("Odd, li NULL at bb %ld with pc_end of %lu\n", i, pc_end);
+            printf_DEBUG("Odd, li NULL at bb %ld with pc_end of %lu\n", i, pc_end);
             continue;
         }
 
@@ -382,4 +382,189 @@ void compute_liveness(CFG* cfg) {
                 changed = 1;
         }
     } while (changed);
+}
+
+/**
+ * STEP 6: LOCAL REGISTER MAPPING
+ *
+ * Ok ok awesome so we have a cfg that maps how our program flows, but we still
+ * need registers allocated. So we will analyze each block and map virtual to
+ * physical registers
+ */
+
+void init_regmap(RegMap* m) {
+    for (int i = 0; i < MAX_VREGS; i++)
+        m->vreg_to_preg[i] = -1;
+    for (int i = 0; i < MAX_PREGS; i++)
+        m->preg_to_vreg[i] = -1;
+}
+
+int alloc_preg(RegMap* m, int vreg) {
+    for (int p = 0; p < MAX_PREGS; p++) {
+        if (m->preg_to_vreg[p] == -1) {
+            m->preg_to_vreg[p] = vreg;
+            m->vreg_to_preg[vreg] = p;
+            return p;
+        }
+    }
+
+    // SPILL — simplest approach:
+    fprintf(stderr, "Spilling vreg %d (no free preg)\n", vreg);
+    return -1;
+}
+
+void free_vreg(RegMap* m, int vreg) {
+    int p = m->vreg_to_preg[vreg];
+    if (p >= 0) {
+        m->preg_to_vreg[p] = -1;
+        m->vreg_to_preg[vreg] = -1;
+    }
+}
+
+int is_live(uint16_t mask, int vreg) {
+    return (mask >> vreg) & 1;
+}
+
+uint16_t live_before_inst(BasicBlock* bb, size_t inst_i) {
+    uint16_t live = bb->live_out;
+
+    // walk backward from end to inst_i+1
+    for (size_t j = bb->instructions_count - 1; j > inst_i; j--) {
+        ParsedInstruction* pi = bb->instructions[j];
+        InstructionFormat f = pi->obj.format;
+
+        // kill defs
+        if (f & 1)
+            live &= ~(1u << pi->rd);
+
+        // add uses
+        if (f & 2)
+            live |= 1u << pi->rs1;
+        if (f & 4)
+            live |= 1u << pi->rs2;
+    }
+
+    return live;
+}
+
+void debug_print_regmap(const char* label, RegMap* m) {
+    printf("  %s:\n", label);
+    for (int v = 0; v < MAX_VREGS; v++) {
+        if (m->vreg_to_preg[v] != -1)
+            printf_DEBUG("    v%-2d -> R%-2d\n", v, m->vreg_to_preg[v]);
+    }
+}
+
+void allocate_block(BasicBlock* bb) {
+    printf("\n===== ALLOCATE BLOCK leader=%ld =====\n", bb->leader);
+
+    // allocate maps
+    bb->map_out = malloc(sizeof(RegMap));
+    bb->map_in = malloc(sizeof(RegMap));
+    init_regmap(bb->map_out);
+    init_regmap(bb->map_in);
+
+    printf("STEP 1: initialize map_out based on live_out = 0x%04x\n", bb->live_out);
+
+    uint16_t live = bb->live_out;
+    for (int v = 0; v < MAX_VREGS; v++) {
+        if (is_live(live, v)) {
+            printf("  live_out: allocating v%d\n", v);
+            alloc_preg(bb->map_out, v);
+        }
+    }
+
+    printf("Initial OUT map:\n");
+    debug_print_regmap("OUT", bb->map_out);
+
+    // working copy
+    RegMap cur = *bb->map_out;
+
+    printf("STEP 2: walk backwards through instructions\n");
+
+    for (int i = bb->instructions_count - 1; i >= 0; i--) {
+        ParsedInstruction* pi = bb->instructions[i];
+        InstructionFormat f = pi->obj.format;
+
+        printf("\n  INSTR %d: opcode=%d rd=%d rs1=%d rs2=%d\n", i, pi->opcode, pi->rd, pi->rs1, pi->rs2);
+
+        printf("  Current regmap before processing:\n");
+        debug_print_regmap("CUR", &cur);
+
+        // USES FIRST
+        if (f & (1 << 1)) {
+            if (cur.vreg_to_preg[pi->rs1] == -1) {
+                printf("    USE rs1=v%d -> allocating\n", pi->rs1);
+                alloc_preg(&cur, pi->rs1);
+            }
+        }
+        if (f & (1 << 2)) {
+            if (cur.vreg_to_preg[pi->rs2] == -1) {
+                printf("    USE rs2=v%d -> allocating\n", pi->rs2);
+                alloc_preg(&cur, pi->rs2);
+            }
+        }
+
+        // DEST
+        if (f & (1 << 0)) {
+            if (cur.vreg_to_preg[pi->rd] != -1) {
+                printf("    DEST kills old v%d -> freeing\n", pi->rd);
+                free_vreg(&cur, pi->rd);
+            }
+            printf("    DEST alloc v%d\n", pi->rd);
+            alloc_preg(&cur, pi->rd);
+        }
+
+        // kill vregs that die here
+        uint16_t live_before = live_before_inst(bb, i);
+        printf("  live_before_inst = 0x%04x\n", live_before);
+
+        for (int v = 0; v < MAX_VREGS; v++) {
+            if (!is_live(live_before, v) && cur.vreg_to_preg[v] != -1) {
+                printf("    v%d dies here -> free preg R%d\n", v, cur.vreg_to_preg[v]);
+                free_vreg(&cur, v);
+            }
+        }
+    }
+
+    printf("\nFinal map_in for block %ld:\n", bb->leader);
+    debug_print_regmap("IN", &cur);
+
+    // Write final map as map_in
+    *bb->map_in = cur;
+
+    printf("===== END BLOCK %ld =====\n", bb->leader);
+}
+
+void fix_edges(CFG* cfg) {
+    printf("\n===== FIX EDGES =====\n");
+
+    for (size_t i = 0; i < cfg->count; i++) {
+        BasicBlock* bb = cfg->nodes[i];
+
+        printf("BLOCK %ld map_out:\n", bb->leader);
+        debug_print_regmap("OUT", bb->map_out);
+
+        for (size_t j = 0; j < bb->outgoing_count; j++) {
+            BasicBlock* succ = bb->outgoing[j];
+
+            printf("  EDGE %ld -> %ld\n", bb->leader, succ->leader);
+            printf("    Succ map_in:\n");
+            debug_print_regmap("IN", succ->map_in);
+
+            for (int v = 0; v < MAX_VREGS; v++) {
+                int p_out = bb->map_out->vreg_to_preg[v];
+                int p_in = succ->map_in->vreg_to_preg[v];
+
+                if (p_out >= 0 && p_in >= 0 && p_out != p_in) {
+                    printf("      CONFLICT v%d: OUT=R%d, IN=R%d => INSERT mov R%d -> R%d\n", v, p_out, p_in, p_out,
+                           p_in);
+
+                    // Here you'd insert an IR instruction
+                }
+            }
+        }
+    }
+
+    printf("===== END FIX EDGES =====\n");
 }

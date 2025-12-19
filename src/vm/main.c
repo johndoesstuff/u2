@@ -31,12 +31,6 @@ typedef struct {
     uint8_t* jit_advance;  // pointer to the current position in jit_memory
 } Context;
 
-typedef struct {
-    uint32_t reg;
-    uint32_t start;
-    uint32_t end;
-} RegisterLifetime;
-
 // global for cfg pass
 ParsedArray* parsed_arr;
 
@@ -237,36 +231,6 @@ void cfg_pass(ParsedInstruction* parsed, Context* context) {
     (void)context;
 }
 
-void jit_pass(ParsedInstruction* parsed, Context* context) {
-    // debug
-    /*switch (parsed->obj.format) {
-        case FORMAT_F:
-            printf(" r%d r%d r%d", parsed->rd + 1, parsed->rs1 + 1, parsed->rs2 + 1);
-            break;
-        case FORMAT_R:
-            printf(" r%d r%d", parsed->rd + 1, parsed->rs1 + 1);
-            break;
-        case FORMAT_I:
-            printf(" r%d %" PRIX64, parsed->rd + 1, parsed->imm);
-            break;
-        case FORMAT_J:
-            printf(" %" PRIX64, parsed->imm);
-            break;
-        case FORMAT_D:
-            printf(" r%d", parsed->rd + 1);
-            break;
-        case FORMAT_NONE:
-            break;
-        default:
-            printf(" [unknown]");
-            exit(1);
-            break;
-    }
-    printf("\n");*/
-
-    emit_jit(context->jit_memory, parsed->opcode, parsed->rd, parsed->rs1, parsed->rs2, parsed->imm);
-}
-
 void free_context(Context* context) {
     free(context);
 }
@@ -340,13 +304,22 @@ int main(int argc, char** argv) {
     CFG* cfg = build_cfg(parsed_arr, jt, ls);
     compute_liveness(cfg);
 
+    printf_DEBUG("CFG Before REGISTER ALLOCATION:\n");
+    _DEBUG_cfg(cfg);
+    for (size_t i = 0; i < cfg->count; i++) {
+        allocate_block(cfg->nodes[i]);
+    }
+    fix_edges(cfg);
+
     // debug jump table
     _DEBUG_jump_table(jt);
 
     // debug cfg
+    printf_DEBUG("CFG After REGISTER ALLOCATION:\n");
     _DEBUG_cfg(cfg);
 
-    do_pass(jit_pass, context, bytecodeFile);
+    // overhaul needed before jit can be reintroduced
+    // do_pass(jit_pass, context, bytecodeFile);
 
     // return from jit
     free_jit(jit_memory);

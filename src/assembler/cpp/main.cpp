@@ -46,10 +46,6 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Missing assembly file." << std::endl;
 		usage(std::cerr);
 		exit(EXIT_FAILURE);
-	} else if (bc_path.empty()) {
-		std::cerr << "Missing output file." << std::endl;
-		usage(std::cerr);
-		exit(EXIT_FAILURE);
 	}
 
 	std::ifstream asm_file(asm_path);
@@ -58,15 +54,19 @@ int main(int argc, char* argv[]) {
 		usage(std::cerr);
 		exit(EXIT_FAILURE);
 	}
-	std::ofstream bc_file(bc_path);
-	if (bc_file.fail()) {
-		std::cerr << "Could not write to file " << bc_path << std::endl;
-		usage(std::cerr);
-		exit(EXIT_FAILURE);
+
+	std::ostream* out = &std::cout;
+	if (!bc_path.empty()) {
+		std::ofstream bc_file(bc_path);
+		if (bc_file.fail()) {
+			std::cerr << "Could not write to file " << bc_path << std::endl;
+			usage(std::cerr);
+			exit(EXIT_FAILURE);
+		}
+		out = &bc_file;
 	}
 
 	std::string line;
-	while (std::getline(asm_file, line)) {
-		std::cout << line << std::endl;
-	}
+	Parser asm_parser(asm_file);
+	(void)out;
 }
