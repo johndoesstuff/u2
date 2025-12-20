@@ -52,6 +52,11 @@ private:
 	std::string_view consume_identifier();
 	std::string_view consume_opcode();
 	std::string_view consume_register();
+	std::string_view consume_comment();
+	std::string_view consume_word();
+
+	int parse_register(std::string_view reg);
+	int64_t parse_number(std::string_view num);
 
 	std::istream& in_;
 	std::string_view line_;

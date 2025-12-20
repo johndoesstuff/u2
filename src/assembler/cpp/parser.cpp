@@ -10,8 +10,16 @@ Parser::Parser(std::istream& in): in_(in), lineno_(0), colno_(0) {};
 size_t Parser::lineno() const { return lineno_; };
 size_t Parser::colno() const { return colno_; };
 
-static void parse_error(const std::string& err, size_t lineno, size_t colno) {
-	throw std::runtime_error("Parse error on line " + std::to_string(lineno) + ":" + std::to_string(colno) + "\n" + err);
+static void parse_error(const std::string& err, size_t lineno, size_t colno, const std::string& line) {
+	std::string err_loc(colno, ' ');
+	err_loc += '^';
+	throw std::runtime_error(
+			"Parse error on line " + 
+			std::to_string(lineno) + ":" + 
+			std::to_string(colno) + "\n" + 
+			line + "\n" + 
+			err_loc + "\n" + 
+			err);
 }
 
 std::ostream& operator<<(std::ostream& os, const ParsedLabel& p) {
@@ -19,7 +27,7 @@ std::ostream& operator<<(std::ostream& os, const ParsedLabel& p) {
 }
 
 std::ostream& operator<<(std::ostream& os, const ParsedInstruction& p) {
-	return os << p.opcode;
+	return os << "[ op: " << p.opcode << ", rd: " << p.rd << "]";
 }
 
 std::ostream& operator<<(std::ostream& os, const ParsedLine& p) {
@@ -48,15 +56,78 @@ ParsedLine Parser::parse_line() {
 		std::string_view label = consume_identifier();
 		consume_whitespace();
 		if (consume_char(':').empty()) {
-			std::string err_string {"Unknown opcode"};
+			std::string err_string {"Unknown opcode: '"};
 			err_string += label;
-			parse_error(err_string, lineno_, colno_);
+			err_string += "'";
+			std::string line {line_};
+			parse_error(err_string, lineno_, colno_, line);
 		}
+		consume_whitespace();
+		consume_comment();
 		p.type = LineType::label;
 		p.label = ParsedLabel {label};
 	} else {
 		p.type = LineType::instruction;
 		p.instruction.opcode = opcode_from_str(op);
+		InstructionFormat format = instruction_from_opcode(p.instruction.opcode).format;
+		consume_whitespace();
+
+		if (has(format, InstructionFormat::Rd)) {
+			std::string_view reg_str = consume_register();
+			if (reg_str.empty()) {
+				std::string err_string {"Expected register but found: '"};
+				err_string += consume_word();
+				err_string += "'";
+				std::string line {line_};
+				parse_error(err_string, lineno_, colno_, line);
+			}
+			p.instruction.rd = parse_register(reg_str);
+		}
+		consume_whitespace();
+
+		if (has(format, InstructionFormat::Rs1)) {
+			std::string_view reg_str = consume_register();
+			if (reg_str.empty()) {
+				std::string err_string {"Expected register but found: '"};
+				err_string += consume_word();
+				err_string += "'";
+				std::string line {line_};
+				parse_error(err_string, lineno_, colno_, line);
+			}
+			p.instruction.rs1 = parse_register(reg_str);
+		}
+		consume_whitespace();
+
+		if (has(format, InstructionFormat::Rs2)) {
+			std::string_view reg_str = consume_register();
+			if (reg_str.empty()) {
+				std::string err_string {"Expected register but found: '"};
+				err_string += consume_word();
+				err_string += "'";
+				std::string line {line_};
+				parse_error(err_string, lineno_, colno_, line);
+			}
+			p.instruction.rs2 = parse_register(reg_str);
+		}
+		consume_whitespace();
+
+		if (has(format, InstructionFormat::Imm)) {
+			std::string_view imm_str = consume_identifier();
+			if (imm_str.empty()) {
+				imm_str = consume_number();
+				if (imm_str.empty()) {
+					std::string err_string {"Expected immediate but found: '"};
+					err_string += consume_word();
+					err_string += "'";
+					std::string line {line_};
+					parse_error(err_string, lineno_, colno_, line);
+				}
+				int64_t p_num = parse_number(imm_str);
+				p.instruction.imm = p_num;
+			} else p.instruction.imm = 0; // unknown until labels are resolved
+		}
+		consume_whitespace();
+		consume_comment();
 	}
 	return p;
 }
@@ -102,6 +173,46 @@ std::string_view Parser::consume_number() {
 	return line_.substr(start_col, colno_ - start_col);
 }
 
+int64_t Parser::parse_number(std::string_view num) {
+    size_t col = 0;
+    int base = 10;
+
+    if (col < num.size() && num[col] == '0') {
+        col++;
+        if (col < num.size()) {
+            char c = num[col];
+            if (c == 'x' || c == 'X') {
+                base = 16;
+                col++;
+            } else if (c == 'b' || c == 'B') {
+                base = 2;
+                col++;
+            }
+        }
+    }
+
+    int64_t value = 0;
+    while (col < num.size()) {
+        char c = num[col];
+        int digit = -1;
+
+        if (std::isdigit(c))
+            digit = c - '0';
+        else if (base == 16 && c >= 'a' && c <= 'f')
+            digit = 10 + (c - 'a');
+        else if (base == 16 && c >= 'A' && c <= 'F')
+            digit = 10 + (c - 'A');
+
+        if (digit < 0 || digit >= base)
+            break;
+
+        value = value * base + digit;
+        col++;
+    }
+
+    return value;
+}
+
 std::string_view Parser::consume_identifier() {
 	size_t start_col = colno_;
 	if (colno_ < line_.size() && std::isalpha(line_[colno_])) {
@@ -111,6 +222,14 @@ std::string_view Parser::consume_identifier() {
 	}
 
 	while (colno_ < line_.size() && (std::isalnum(line_[colno_]) || line_[colno_] == '_')) {
+		colno_++;
+	}
+	return line_.substr(start_col, colno_ - start_col);
+}
+
+std::string_view Parser::consume_word() {
+	size_t start_col = colno_;
+	while (colno_ < line_.size() && !std::isspace(line_[colno_])) {
 		colno_++;
 	}
 	return line_.substr(start_col, colno_ - start_col);
@@ -141,5 +260,26 @@ std::string_view Parser::consume_register() {
 		colno_ = start_col;
 		return {};
 	}
+	return line_.substr(start_col, colno_ - start_col);
+}
+
+// -1 for invalid, 0-15 for registers r1-r16
+int Parser::parse_register(std::string_view reg) {
+	if (reg[0] != 'r') return -1;
+	int reg_num {0};
+	for (size_t i = 1; i < reg.size() && std::isdigit(reg[i]); i++) {
+		reg_num *= 10;
+		reg_num += reg[i] - '0';
+	}
+	if (reg_num < 1 || reg_num > 16) {
+		return -1;
+	}
+	return reg_num;
+}
+
+std::string_view Parser::consume_comment() {
+	size_t start_col = colno_;
+	if (consume_char(';').empty()) return {};
+	colno_ = line_.size() - 1;
 	return line_.substr(start_col, colno_ - start_col);
 }

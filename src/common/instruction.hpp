@@ -15,6 +15,18 @@ enum class InstructionFormat : uint8_t {
     Imm   = 1 << 3,
 };
 
+constexpr InstructionFormat operator&(InstructionFormat a, InstructionFormat b) {
+	return static_cast<InstructionFormat>(static_cast<uint8_t>(a)&static_cast<uint8_t>(b));
+}
+
+constexpr InstructionFormat operator|(InstructionFormat a, InstructionFormat b) {
+	return static_cast<InstructionFormat>(static_cast<uint8_t>(a)|static_cast<uint8_t>(b));
+}
+
+constexpr bool has(InstructionFormat a, InstructionFormat b) {
+	return static_cast<bool>(a & b);
+}
+
 constexpr InstructionFormat make_format(
     std::initializer_list<InstructionFormat> flags
 ) {
@@ -159,8 +171,12 @@ constexpr size_t to_index(Opcode op) {
 
 constexpr int INSTRUCTION_COUNT = sizeof(INSTRUCTION_SET) / sizeof(INSTRUCTION_SET[0]);
 
-constexpr const Instruction& instruction_from_opcode(Opcode op) {
+constexpr const Instruction& instruction_from_op(Opcode op) {
 	return INSTRUCTION_SET[to_index(op)];
+}
+
+constexpr const Instruction& instruction_from_opcode(uint32_t op) {
+	return INSTRUCTION_SET[op];
 }
 
 constexpr int opcode_from_str(std::string_view st) {
