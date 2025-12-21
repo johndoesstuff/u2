@@ -175,8 +175,8 @@ constexpr const Instruction& instruction_from_op(Opcode op) {
 	return INSTRUCTION_SET[to_index(op)];
 }
 
-constexpr const Instruction& instruction_from_opcode(uint32_t op) {
-	return INSTRUCTION_SET[op];
+constexpr const Instruction& instruction_from_opcode(const OPCODE& op) {
+	return INSTRUCTION_SET[op.value];
 }
 
 constexpr int opcode_from_str(std::string_view st) {

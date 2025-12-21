@@ -27,7 +27,13 @@ std::ostream& operator<<(std::ostream& os, const ParsedLabel& p) {
 }
 
 std::ostream& operator<<(std::ostream& os, const ParsedInstruction& p) {
-	return os << "[ op: " << p.opcode << ", rd: " << p.rd << "]";
+	os << "[ op: " << p.opcode;
+	os << ", rd: " << p.rd;
+	os << ", rs1: " << p.rs1;
+	os << ", rs2: " << p.rs2;
+	os << ", imm: " << p.imm;
+	os << "]";
+	return os;
 }
 
 std::ostream& operator<<(std::ostream& os, const ParsedLine& p) {
@@ -122,9 +128,9 @@ ParsedLine Parser::parse_line() {
 					std::string line {line_};
 					parse_error(err_string, lineno_, colno_, line);
 				}
-				int64_t p_num = parse_number(imm_str);
+				IMMEDIATE p_num = parse_number(imm_str);
 				p.instruction.imm = p_num;
-			} else p.instruction.imm = 0; // unknown until labels are resolved
+			} else p.instruction.imm = IMMEDIATE(0); // unknown until labels are resolved
 		}
 		consume_whitespace();
 		consume_comment();
@@ -173,7 +179,7 @@ std::string_view Parser::consume_number() {
 	return line_.substr(start_col, colno_ - start_col);
 }
 
-int64_t Parser::parse_number(std::string_view num) {
+IMMEDIATE Parser::parse_number(std::string_view num) {
     size_t col = 0;
     int base = 10;
 
@@ -191,7 +197,7 @@ int64_t Parser::parse_number(std::string_view num) {
         }
     }
 
-    int64_t value = 0;
+    IMMEDIATE value(0);
     while (col < num.size()) {
         char c = num[col];
         int digit = -1;
@@ -264,17 +270,18 @@ std::string_view Parser::consume_register() {
 }
 
 // -1 for invalid, 0-15 for registers r1-r16
-int Parser::parse_register(std::string_view reg) {
-	if (reg[0] != 'r') return -1;
+REGISTER Parser::parse_register(std::string_view reg) {
+	if (reg[0] != 'r') return REGISTER(-1);
 	int reg_num {0};
 	for (size_t i = 1; i < reg.size() && std::isdigit(reg[i]); i++) {
 		reg_num *= 10;
 		reg_num += reg[i] - '0';
 	}
 	if (reg_num < 1 || reg_num > 16) {
-		return -1;
+		return REGISTER(-1);
 	}
-	return reg_num;
+	REGISTER regf (reg_num);
+	return regf;
 }
 
 std::string_view Parser::consume_comment() {

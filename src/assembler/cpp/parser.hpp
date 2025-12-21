@@ -6,18 +6,19 @@
 #include <iostream>
 #include <cstdint>
 #include "../../common/instruction.hpp"
+#include "../../common/types.hpp"
 
 struct ParsedLabel {
 	std::string_view identifier;
 };
 
 struct ParsedInstruction {
-    uint32_t opcode;
-    uint32_t rd;
-    uint32_t rs1;
-    uint32_t rs2;
+    OPCODE opcode;
+    REGISTER rd;
+    REGISTER rs1;
+    REGISTER rs2;
     uint32_t imm_ext;
-    uint64_t imm;
+    IMMEDIATE imm;
     Instruction obj;
 };
 
@@ -55,8 +56,8 @@ private:
 	std::string_view consume_comment();
 	std::string_view consume_word();
 
-	int parse_register(std::string_view reg);
-	int64_t parse_number(std::string_view num);
+	REGISTER parse_register(std::string_view reg);
+	IMMEDIATE parse_number(std::string_view num);
 
 	std::istream& in_;
 	std::string_view line_;
